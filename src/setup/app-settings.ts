@@ -3,11 +3,7 @@ import { config } from 'dotenv';
 config();
 
 export type EnvironmentVariable = { [key: string]: string | undefined };
-export type EnvironmentsTypes =
-  | 'DEVELOPMENT'
-  | 'STAGING'
-  | 'PRODUCTION'
-  | 'TESTING';
+export type EnvironmentsTypes = 'DEVELOPMENT' | 'STAGING' | 'PRODUCTION' | 'TESTING';
 export const Environments = ['DEVELOPMENT', 'STAGING', 'PRODUCTION', 'TESTING'];
 
 export class EnvironmentSettings {
@@ -52,14 +48,10 @@ class APISettings {
   constructor(private readonly envVariables: EnvironmentVariable) {
     // Application
     this.APP_PORT = this.getNumberOrDefault(envVariables.APP_PORT ?? '', 7840);
-    this.HASH_ROUNDS = this.getNumberOrDefault(
-      envVariables.HASH_ROUNDS ?? '10',
-      10,
-    );
+    this.HASH_ROUNDS = this.getNumberOrDefault(envVariables.HASH_ROUNDS ?? '10', 10);
 
     // Database
-    this.MONGO_CONNECTION_URI =
-      envVariables.MONGO_CONNECTION_URI ?? 'mongodb://localhost/nest';
+    this.MONGO_CONNECTION_URI = envVariables.MONGO_CONNECTION_URI ?? 'mongodb://localhost/nest';
   }
 
   private getNumberOrDefault(value: string, defaultValue: number): number {
