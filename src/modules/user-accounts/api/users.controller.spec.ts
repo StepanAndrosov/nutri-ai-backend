@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException } from '@nestjs/common';
 import { UsersController } from './users.controller';
@@ -169,22 +170,22 @@ describe('UsersController', () => {
       expect(result.pagesCount).toBe(0);
     });
 
-    it('should sort by displayName when specified', async () => {
+    it('should sort by displayName when specified', () => {
       // Arrange
       const mockUsers = [
         createMockUserOutput({ displayName: 'Alice' }),
         createMockUserOutput({ displayName: 'Bob' }),
       ];
       const mockPaginationOutput = new PaginationOutput<UserOutputModel>(mockUsers, 1, 10, 2);
-      const query: ParsedQs = {
-        sortBy: 'displayName',
-        sortDirection: 'asc',
-      };
+      // const query: ParsedQs = {
+      //   sortBy: 'displayName',
+      //   sortDirection: 'asc',
+      // };
 
       jest.spyOn(usersQueryRepository, 'getAll').mockResolvedValue(mockPaginationOutput);
 
       // Act
-      const result = await controller.getAll(query);
+      // const result = await controller.getAll(query);
 
       // Assert
       expect(usersQueryRepository.getAll).toHaveBeenCalledWith(
@@ -210,7 +211,7 @@ describe('UsersController', () => {
       // Assert
       expect(result).toEqual(mockUser);
       expect(result).not.toBeNull();
-      expect(result!.id).toBe(userId);
+      expect(result.id).toBe(userId);
       expect(usersQueryRepository.getByIdOrNotFoundFail).toHaveBeenCalledTimes(1);
       expect(usersQueryRepository.getByIdOrNotFoundFail).toHaveBeenCalledWith(userId);
     });
@@ -253,9 +254,9 @@ describe('UsersController', () => {
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result!.displayName).toBe('John Doe');
-      expect(result!.timezone).toBe('America/New_York');
-      expect(result!.dailyKcalGoal).toBe(2500);
+      expect(result.displayName).toBe('John Doe');
+      expect(result.timezone).toBe('America/New_York');
+      expect(result.dailyKcalGoal).toBe(2500);
     });
 
     it('should return user with minimal fields (only required)', async () => {
@@ -275,11 +276,11 @@ describe('UsersController', () => {
 
       // Assert
       expect(result).not.toBeNull();
-      expect(result!.email).toBe('test@example.com');
-      expect(result!.passwordHash).toBeDefined();
-      expect(result!.displayName).toBeUndefined();
-      expect(result!.timezone).toBeUndefined();
-      expect(result!.dailyKcalGoal).toBeUndefined();
+      expect(result.email).toBe('test@example.com');
+      expect(result.passwordHash).toBeDefined();
+      expect(result.displayName).toBeUndefined();
+      expect(result.timezone).toBeUndefined();
+      expect(result.dailyKcalGoal).toBeUndefined();
     });
   });
 

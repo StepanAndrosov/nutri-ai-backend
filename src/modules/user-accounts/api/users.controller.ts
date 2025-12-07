@@ -42,7 +42,7 @@ export class UsersController {
   }
   @ApiParam({ name: 'id' })
   @Get(':id')
-  async getById(@Param('id') id: string): Promise<UserOutputModel | null> {
+  async getById(@Param('id') id: string): Promise<UserOutputModel> {
     return this.usersQueryRepository.getByIdOrNotFoundFail(id);
   }
 
