@@ -1,5 +1,7 @@
 export class UserCreateModel {
-  login: string;
-  password: string;
   email: string;
+  password: string;
+  displayName?: string;
+  timezone?: string;
+  dailyKcalGoal?: number;
 }

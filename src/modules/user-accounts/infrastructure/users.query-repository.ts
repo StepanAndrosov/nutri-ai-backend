@@ -4,7 +4,7 @@ import { User, UserModelType } from '../domain/user.entity';
 import { InjectModel } from '@nestjs/mongoose';
 import {
   PaginationOutput,
-  PaginationWithSearchLoginAndEmailTerm,
+  PaginationWithSearchEmailTerm,
 } from '../../../base/models/pagination.base.model';
 import { FilterQuery } from 'mongoose';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
@@ -31,26 +31,12 @@ export class UsersQueryRepository {
   }
 
   async getAll(
-    pagination: PaginationWithSearchLoginAndEmailTerm,
+    pagination: PaginationWithSearchEmailTerm,
   ): Promise<PaginationOutput<UserOutputModel>> {
-    const filters: FilterQuery<User>[] = [];
-
-    if (pagination.searchEmailTerm) {
-      filters.push({
-        email: { $regex: pagination.searchEmailTerm, $options: 'i' },
-      });
-    }
-
-    if (pagination.searchLoginTerm) {
-      filters.push({
-        login: { $regex: pagination.searchLoginTerm, $options: 'i' },
-      });
-    }
-
     const filter: FilterQuery<User> = {};
 
-    if (filters.length > 0) {
-      filter.$or = filters;
+    if (pagination.searchEmailTerm) {
+      filter.email = { $regex: pagination.searchEmailTerm, $options: 'i' };
     }
 
     return await this.__getResult(filter, pagination);
@@ -58,7 +44,7 @@ export class UsersQueryRepository {
 
   private async __getResult(
     filter: FilterQuery<User>,
-    pagination: PaginationWithSearchLoginAndEmailTerm,
+    pagination: PaginationWithSearchEmailTerm,
   ): Promise<PaginationOutput<UserOutputModel>> {
     const users = await this.UserModel.find(filter)
       .sort({

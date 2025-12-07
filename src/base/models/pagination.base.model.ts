@@ -101,6 +101,16 @@ export class PaginationWithSearchLoginAndEmailTerm extends Pagination {
   }
 }
 
+export class PaginationWithSearchEmailTerm extends Pagination {
+  public readonly searchEmailTerm: string | null;
+
+  constructor(query: ParsedQs, sortProperties: string[]) {
+    super(query, sortProperties);
+
+    this.searchEmailTerm = query.searchEmailTerm ? `${query.searchEmailTerm as string}` : null;
+  }
+}
+
 export type SortDirectionType = 'desc' | 'asc';
 
 export type PaginationType = {
