@@ -9,7 +9,7 @@ export class UsersRepository {
   async create(newUser: User): Promise<string> {
     const insertResult = await this.UserModel.insertMany([newUser]);
 
-    return insertResult[0].id;
+    return insertResult[0].id as string;
   }
 
   async delete(id: string): Promise<boolean> {

@@ -96,12 +96,8 @@ export class PaginationWithSearchLoginAndEmailTerm extends Pagination {
   constructor(query: ParsedQs, sortProperties: string[]) {
     super(query, sortProperties);
 
-    this.searchLoginTerm = query.searchLoginTerm
-      ? `${query.searchLoginTerm as string}`
-      : null;
-    this.searchEmailTerm = query.searchEmailTerm
-      ? `${query.searchEmailTerm as string}`
-      : null;
+    this.searchLoginTerm = query.searchLoginTerm ? `${query.searchLoginTerm as string}` : null;
+    this.searchEmailTerm = query.searchEmailTerm ? `${query.searchEmailTerm as string}` : null;
   }
 }
 

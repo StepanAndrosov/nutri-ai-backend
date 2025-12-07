@@ -69,10 +69,10 @@ export class UsersQueryRepository {
 
     const totalCount = await this.UserModel.countDocuments(filter);
 
-    const mappedPosts = users.map(UserOutputModelMapper);
+    const mappedUsers = users.map(UserOutputModelMapper);
 
     return new PaginationOutput<UserOutputModel>(
-      mappedPosts,
+      mappedUsers,
       pagination.pageNumber,
       pagination.pageSize,
       totalCount,
