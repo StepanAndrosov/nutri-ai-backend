@@ -170,22 +170,22 @@ describe('UsersController', () => {
       expect(result.pagesCount).toBe(0);
     });
 
-    it('should sort by displayName when specified', () => {
+    it('should sort by displayName when specified', async () => {
       // Arrange
       const mockUsers = [
         createMockUserOutput({ displayName: 'Alice' }),
         createMockUserOutput({ displayName: 'Bob' }),
       ];
       const mockPaginationOutput = new PaginationOutput<UserOutputModel>(mockUsers, 1, 10, 2);
-      // const query: ParsedQs = {
-      //   sortBy: 'displayName',
-      //   sortDirection: 'asc',
-      // };
+      const query: ParsedQs = {
+        sortBy: 'displayName',
+        sortDirection: 'asc',
+      };
 
       jest.spyOn(usersQueryRepository, 'getAll').mockResolvedValue(mockPaginationOutput);
 
       // Act
-      // const result = await controller.getAll(query);
+      await controller.getAll(query);
 
       // Assert
       expect(usersQueryRepository.getAll).toHaveBeenCalledWith(
