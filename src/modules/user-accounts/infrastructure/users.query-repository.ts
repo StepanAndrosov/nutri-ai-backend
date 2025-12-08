@@ -14,6 +14,19 @@ import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes'
 export class UsersQueryRepository {
   constructor(@InjectModel(User.name) private UserModel: UserModelType) {}
 
+  async getById(id: string): Promise<UserOutputModel | null> {
+    const user = await this.UserModel.findOne({
+      _id: id,
+      deletedAt: null,
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return UserOutputModelMapper(user);
+  }
+
   async getByIdOrNotFoundFail(id: string): Promise<UserOutputModel> {
     const user = await this.UserModel.findOne({
       _id: id,

@@ -45,6 +45,10 @@ class APISettings {
   // Database
   public readonly MONGO_CONNECTION_URI: string;
 
+  // JWT
+  public readonly JWT_SECRET: string;
+  public readonly JWT_EXPIRES_IN: string;
+
   constructor(private readonly envVariables: EnvironmentVariable) {
     // Application
     this.APP_PORT = this.getNumberOrDefault(envVariables.APP_PORT ?? '', 7840);
@@ -52,6 +56,9 @@ class APISettings {
 
     // Database
     this.MONGO_CONNECTION_URI = envVariables.MONGO_CONNECTION_URI ?? 'mongodb://localhost/nest';
+    // JWT
+    this.JWT_SECRET = envVariables.JWT_SECRET ?? 'your-secret-key-change-in-production';
+    this.JWT_EXPIRES_IN = envVariables.JWT_EXPIRES_IN ?? '7d';
   }
 
   private getNumberOrDefault(value: string, defaultValue: number): number {

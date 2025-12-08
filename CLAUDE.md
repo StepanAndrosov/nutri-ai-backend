@@ -131,12 +131,49 @@ The exception filters automatically map domain codes to HTTP status codes:
 - Injected with `@InjectModel()` decorator
 - Return domain models or primitive types, not Mongoose documents directly
 
+### Authentication & Authorization
+
+The application uses JWT (JSON Web Token) based authentication with NestJS Passport:
+
+#### Components
+
+- **AuthService** (`src/modules/auth/application/auth.service.ts`): JWT token generation/validation, password hashing
+- **JwtStrategy** (`src/modules/auth/application/strategies/jwt.strategy.ts`): Passport JWT strategy
+- **JwtAuthGuard** (`src/modules/auth/api/guards/jwt-auth.guard.ts`): Route protection guard
+- **CurrentUser Decorator** (`src/modules/auth/api/decorators/current-user.decorator.ts`): Extract authenticated user
+
+#### Protecting Routes
+
+```typescript
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/api/guards/jwt-auth.guard';
+import { CurrentUser, CurrentUserType } from '../auth/api/decorators/current-user.decorator';
+
+@Get('protected')
+@UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
+async protectedRoute(@CurrentUser() user: CurrentUserType) {
+  // user.userId - authenticated user's ID
+  // user.email - authenticated user's email
+}
+```
+
+#### Authentication Endpoints
+
+- `POST /auth/signup` - Register new user and receive JWT token
+- `POST /auth/login` - Authenticate user and receive JWT token
+- `GET /auth/me` - Get current authenticated user info (protected)
+
+For detailed JWT documentation, see `docs/JWT_AUTHENTICATION.md`
+
 ## Environment Variables
 
 Required environment variables (defaults shown):
 - `APP_PORT`: Application port (default: 7840)
 - `MONGO_CONNECTION_URI`: MongoDB connection string (default: mongodb://localhost/nest)
 - `HASH_ROUNDS`: Bcrypt hash rounds for passwords (default: 10)
+- `JWT_SECRET`: Secret key for JWT signing (default: 'your-secret-key-change-in-production')
+- `JWT_EXPIRES_IN`: JWT token expiration time (default: '7d')
 - `ENV`: Environment type - DEVELOPMENT, STAGING, PRODUCTION, or TESTING (default: DEVELOPMENT)
 
 ## Key Dependencies
@@ -146,3 +183,6 @@ Required environment variables (defaults shown):
 - **Swagger**: API documentation generation
 - **bcrypt**: Password hashing (via AuthService)
 - **class-validator/class-transformer**: DTO validation and transformation
+- **@nestjs/jwt**: JWT token generation and validation
+- **@nestjs/passport**: Passport integration for authentication strategies
+- **passport-jwt**: JWT authentication strategy for Passport
