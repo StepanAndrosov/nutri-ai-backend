@@ -49,6 +49,12 @@ class APISettings {
   public readonly JWT_SECRET: string;
   public readonly JWT_EXPIRES_IN: string;
 
+  // Food Database APIs
+  public readonly USDA_API_KEY: string;
+  public readonly USDA_API_URL: string;
+  public readonly OPEN_FOOD_FACTS_API_URL: string;
+  public readonly FOOD_CACHE_TTL_SECONDS: number;
+
   constructor(private readonly envVariables: EnvironmentVariable) {
     // Application
     this.APP_PORT = this.getNumberOrDefault(envVariables.APP_PORT ?? '', 7840);
@@ -59,6 +65,16 @@ class APISettings {
     // JWT
     this.JWT_SECRET = envVariables.JWT_SECRET ?? 'your-secret-key-change-in-production';
     this.JWT_EXPIRES_IN = envVariables.JWT_EXPIRES_IN ?? '7d';
+
+    // Food Database APIs
+    this.USDA_API_KEY = envVariables.USDA_API_KEY ?? 'DEMO_KEY';
+    this.USDA_API_URL = envVariables.USDA_API_URL ?? 'https://api.nal.usda.gov/fdc/v1';
+    this.OPEN_FOOD_FACTS_API_URL =
+      envVariables.OPEN_FOOD_FACTS_API_URL ?? 'https://world.openfoodfacts.org/api/v2';
+    this.FOOD_CACHE_TTL_SECONDS = this.getNumberOrDefault(
+      envVariables.FOOD_CACHE_TTL_SECONDS ?? '604800',
+      604800,
+    );
   }
 
   private getNumberOrDefault(value: string, defaultValue: number): number {
