@@ -13,16 +13,11 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
  *   // timezone will contain the value from headers or 'UTC' as fallback
  * }
  */
-export const Timezone = createParamDecorator(
-  (data: unknown, ctx: ExecutionContext): string => {
-    const request = ctx.switchToHttp().getRequest();
+export const Timezone = createParamDecorator((data: unknown, ctx: ExecutionContext): string => {
+  const request = ctx.switchToHttp().getRequest();
 
-    // Check for timezone in headers (case-insensitive)
-    const timezone =
-      request.headers['x-timezone'] ||
-      request.headers['timezone'] ||
-      'UTC';
+  // Check for timezone in headers (case-insensitive)
+  const timezone = request.headers['x-timezone'] || request.headers['timezone'] || 'UTC';
 
-    return timezone as string;
-  },
-);
+  return timezone as string;
+});

@@ -50,9 +50,7 @@ describe('AuthController', () => {
   };
 
   // Mock Google token payload
-  const createMockGooglePayload = (
-    overrides?: Partial<GoogleTokenPayload>,
-  ): GoogleTokenPayload => {
+  const createMockGooglePayload = (overrides?: Partial<GoogleTokenPayload>): GoogleTokenPayload => {
     return {
       email: 'googleuser@example.com',
       name: 'Google User',

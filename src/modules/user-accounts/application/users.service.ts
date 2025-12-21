@@ -22,6 +22,7 @@ export class UsersService {
     const newUser = {
       email: email,
       passwordHash: generatedPasswordHash,
+      authProvider: 'local' as const,
       displayName: displayName,
       timezone: timezone,
       dailyKcalGoal: dailyKcalGoal,
