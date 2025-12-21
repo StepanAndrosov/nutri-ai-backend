@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
 import { appSettings } from 'src/setup/app-settings';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { DomainException, Extension } from '../../../core/exceptions/domain-exceptions';
@@ -52,28 +53,18 @@ export class AuthService {
     return this.jwtService.decode<JwtPayload>(token);
   }
 
-  async verifyGoogleToken(idToken: string): Promise<GoogleTokenPayload> {
+  async verifyGoogleToken(token: string): Promise<GoogleTokenPayload> {
     try {
-      const ticket = await this.googleClient.verifyIdToken({
-        idToken,
-        audience: appSettings.api.GOOGLE_CLIENT_ID,
-      });
+      // Check if token is an access token (starts with ya29.) or ID token (JWT)
+      const isAccessToken = token.startsWith('ya29.');
 
-      const payload = ticket.getPayload();
-
-      if (!payload || !payload.email || !payload.sub) {
-        throw new DomainException({
-          code: DomainExceptionCode.Unauthorized,
-          message: 'Invalid Google token payload',
-        });
+      if (isAccessToken) {
+        // Verify access token by calling Google's tokeninfo endpoint
+        return await this.verifyGoogleAccessToken(token);
+      } else {
+        // Verify ID token (JWT)
+        return await this.verifyGoogleIdToken(token);
       }
-
-      return {
-        email: payload.email,
-        name: payload.name,
-        googleId: payload.sub,
-        picture: payload.picture,
-      };
     } catch (error) {
       // Log the actual error for debugging
       console.error('Google token verification failed:', error);
@@ -91,5 +82,53 @@ export class AuthService {
         ],
       });
     }
+  }
+
+  private async verifyGoogleIdToken(idToken: string): Promise<GoogleTokenPayload> {
+    const ticket = await this.googleClient.verifyIdToken({
+      idToken,
+      audience: appSettings.api.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email || !payload.sub) {
+      throw new DomainException({
+        code: DomainExceptionCode.Unauthorized,
+        message: 'Invalid Google ID token payload',
+      });
+    }
+
+    return {
+      email: payload.email,
+      name: payload.name,
+      googleId: payload.sub,
+      picture: payload.picture,
+    };
+  }
+
+  private async verifyGoogleAccessToken(accessToken: string): Promise<GoogleTokenPayload> {
+    // Use Google OAuth2 API to get user info from access token
+    const response = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    });
+
+    const userInfo = response.data;
+
+    if (!userInfo.email || !userInfo.sub) {
+      throw new DomainException({
+        code: DomainExceptionCode.Unauthorized,
+        message: 'Invalid Google access token payload',
+      });
+    }
+
+    return {
+      email: userInfo.email,
+      name: userInfo.name,
+      googleId: userInfo.sub,
+      picture: userInfo.picture,
+    };
   }
 }
