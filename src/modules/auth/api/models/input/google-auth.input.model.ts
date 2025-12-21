@@ -1,5 +1,5 @@
-import { IsNotEmpty, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class GoogleAuthInputModel {
   @ApiProperty({
@@ -9,4 +9,12 @@ export class GoogleAuthInputModel {
   @IsString()
   @IsNotEmpty()
   idToken: string;
+
+  @ApiPropertyOptional({
+    description: 'User timezone',
+    example: 'Europe/Moscow',
+  })
+  @IsString()
+  @IsOptional()
+  timezone?: string;
 }

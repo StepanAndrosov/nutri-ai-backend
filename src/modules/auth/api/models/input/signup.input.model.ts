@@ -27,4 +27,12 @@ export class SignupInputModel {
   @IsString()
   @IsOptional()
   displayName?: string;
+
+  @ApiPropertyOptional({
+    description: 'User timezone',
+    example: 'Europe/Moscow',
+  })
+  @IsString()
+  @IsOptional()
+  timezone?: string;
 }
