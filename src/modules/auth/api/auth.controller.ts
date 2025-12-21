@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiHeader } from '@nestjs/swagger';
 import { SignupInputModel } from './models/input/signup.input.model';
 import { LoginInputModel } from './models/input/login.input.model';
 import { GoogleAuthInputModel } from './models/input/google-auth.input.model';
@@ -9,6 +9,7 @@ import { UsersQueryRepository } from '../../user-accounts/infrastructure/users.q
 import { AuthService } from '../application/auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from './decorators/current-user.decorator';
+import { Timezone } from './decorators/timezone.decorator';
 import { UserOutputModel } from '../../user-accounts/api/models/output/user.output.model';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
@@ -25,8 +26,18 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
-  async signup(@Body() signupData: SignupInputModel): Promise<AuthOutputModel> {
-    const { email, password, displayName, timezone } = signupData;
+  @ApiHeader({
+    name: 'X-Timezone',
+    description:
+      'User timezone (e.g., Europe/Moscow, America/New_York). Defaults to UTC if not provided.',
+    required: false,
+    example: 'Europe/Moscow',
+  })
+  async signup(
+    @Body() signupData: SignupInputModel,
+    @Timezone() timezone: string,
+  ): Promise<AuthOutputModel> {
+    const { email, password, displayName } = signupData;
 
     // Check if user already exists
     const existingUser = await this.usersQueryRepository.getByEmail(email);
@@ -37,7 +48,7 @@ export class AuthController {
       });
     }
 
-    // Create new user
+    // Create new user with timezone from headers
     const createdUserId = await this.usersService.create(
       email,
       password,
@@ -96,7 +107,17 @@ export class AuthController {
   @Post('google')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate with Google OAuth' })
-  async googleAuth(@Body() googleAuthData: GoogleAuthInputModel): Promise<AuthOutputModel> {
+  @ApiHeader({
+    name: 'X-Timezone',
+    description:
+      'User timezone (e.g., Europe/Moscow, America/New_York). Defaults to UTC if not provided.',
+    required: false,
+    example: 'Europe/Moscow',
+  })
+  async googleAuth(
+    @Body() googleAuthData: GoogleAuthInputModel,
+    @Timezone() timezone: string,
+  ): Promise<AuthOutputModel> {
     const { idToken } = googleAuthData;
 
     // Verify Google token
@@ -106,12 +127,12 @@ export class AuthController {
     let user = await this.usersQueryRepository.getByEmail(googlePayload.email);
 
     if (!user) {
-      // Create new user from Google account
+      // Create new user from Google account with timezone from headers
       const createdUserId = await this.usersService.createFromGoogle(
         googlePayload.email,
         googlePayload.googleId,
         googlePayload.name,
-        undefined, // timezone
+        timezone,
       );
 
       user = await this.usersQueryRepository.getByIdOrNotFoundFail(createdUserId);
