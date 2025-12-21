@@ -49,6 +49,9 @@ class APISettings {
   public readonly JWT_SECRET: string;
   public readonly JWT_EXPIRES_IN: string;
 
+  // Google OAuth
+  public readonly GOOGLE_CLIENT_ID: string;
+
   // Food Database APIs
   public readonly USDA_API_KEY: string;
   public readonly USDA_API_URL: string;
@@ -65,6 +68,9 @@ class APISettings {
     // JWT
     this.JWT_SECRET = envVariables.JWT_SECRET ?? 'your-secret-key-change-in-production';
     this.JWT_EXPIRES_IN = envVariables.JWT_EXPIRES_IN ?? '7d';
+
+    // Google OAuth
+    this.GOOGLE_CLIENT_ID = envVariables.GOOGLE_CLIENT_ID ?? '';
 
     // Food Database APIs
     this.USDA_API_KEY = envVariables.USDA_API_KEY ?? 'DEMO_KEY';

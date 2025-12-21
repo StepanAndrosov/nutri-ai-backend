@@ -14,17 +14,30 @@ export class UserOutputModel {
   })
   email: string;
 
-  @ApiProperty({
-    description: 'Hashed password',
+  @ApiPropertyOptional({
+    description: 'Hashed password (only for local auth)',
     example: '$2b$10$...',
   })
-  passwordHash: string;
+  passwordHash?: string;
 
   @ApiPropertyOptional({
     description: 'Display name for the user',
     example: 'John Doe',
   })
   displayName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Authentication provider',
+    example: 'local',
+    enum: ['local', 'google'],
+  })
+  authProvider?: 'local' | 'google';
+
+  @ApiPropertyOptional({
+    description: 'Google ID for OAuth users',
+    example: '1234567890',
+  })
+  googleId?: string;
 
   @ApiPropertyOptional({
     description: 'User timezone',
@@ -56,6 +69,8 @@ export const UserOutputModelMapper = (user: UserDocument): UserOutputModel => {
   outputModel.displayName = user.displayName;
   outputModel.timezone = user.timezone;
   outputModel.dailyKcalGoal = user.dailyKcalGoal;
+  outputModel.authProvider = user.authProvider;
+  outputModel.googleId = user.googleId;
   outputModel.createdAt = user.createdAt.toISOString();
 
   return outputModel;

@@ -5,12 +5,12 @@ import { Food, FoodDocument } from '../../domain/food.entity';
 
 @Injectable()
 export class FoodQueryRepository {
-  constructor(@InjectModel(Food.name) private foodModel: Model<FoodDocument>) { }
+  constructor(@InjectModel(Food.name) private foodModel: Model<FoodDocument>) {}
 
   async searchByText(query: string, limit: number = 20): Promise<Food[]> {
     return this.foodModel
-      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
-      .sort({ score: { $meta: 'textScore' } })
+      .find({ $text: { $search: query }}, { score: { $meta: 'textScore' }})
+      .sort({ score: { $meta: 'textScore' }})
       .limit(limit)
       .exec();
   }

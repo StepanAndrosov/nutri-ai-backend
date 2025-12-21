@@ -6,8 +6,8 @@ export class User {
   @Prop({ type: String, required: true, unique: true })
   email: string;
 
-  @Prop({ type: String, required: true })
-  passwordHash: string;
+  @Prop({ type: String, required: false })
+  passwordHash?: string;
 
   @Prop({ type: String, required: false })
   displayName?: string;
@@ -17,6 +17,12 @@ export class User {
 
   @Prop({ type: Number, required: false, min: 0 })
   dailyKcalGoal?: number;
+
+  @Prop({ type: String, required: false, enum: ['local', 'google'], default: 'local' })
+  authProvider?: 'local' | 'google';
+
+  @Prop({ type: String, required: false, unique: true, sparse: true })
+  googleId?: string;
 
   @Prop({ type: Date, default: () => new Date() })
   createdAt: Date;

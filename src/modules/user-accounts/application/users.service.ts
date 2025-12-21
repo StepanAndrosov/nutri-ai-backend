@@ -36,4 +36,25 @@ export class UsersService {
   async delete(id: string): Promise<boolean> {
     return this.usersRepository.delete(id);
   }
+
+  async createFromGoogle(
+    email: string,
+    googleId: string,
+    displayName?: string,
+    timezone?: string,
+  ): Promise<string> {
+    const newUser = {
+      email: email,
+      googleId: googleId,
+      authProvider: 'google' as const,
+      displayName: displayName,
+      timezone: timezone,
+      dailyKcalGoal: 0,
+      createdAt: new Date(),
+    };
+
+    const createdUserId: string = await this.usersRepository.create(newUser);
+
+    return createdUserId;
+  }
 }
