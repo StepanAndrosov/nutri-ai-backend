@@ -4,7 +4,7 @@ import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import { appSettings } from 'src/setup/app-settings';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
-import { DomainException } from '../../../core/exceptions/domain-exceptions';
+import { DomainException, Extension } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 
 export interface GoogleTokenPayload {
@@ -74,10 +74,21 @@ export class AuthService {
         googleId: payload.sub,
         picture: payload.picture,
       };
-    } catch {
+    } catch (error) {
+      // Log the actual error for debugging
+      console.error('Google token verification failed:', error);
+
+      // If it's already a DomainException, rethrow it
+      if (error instanceof DomainException) {
+        throw error;
+      }
+
       throw new DomainException({
         code: DomainExceptionCode.Unauthorized,
         message: 'Failed to verify Google token',
+        extensions: [
+          new Extension(error instanceof Error ? error.message : String(error), 'originalError'),
+        ],
       });
     }
   }
