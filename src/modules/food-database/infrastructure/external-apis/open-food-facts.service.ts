@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { appSettings } from 'src/setup/app-settings';
 import { NutritionInfo } from '../../domain/food.entity';
 
 interface OpenFoodFactsProduct {
@@ -57,9 +57,14 @@ export interface OpenFoodFactsFood {
 @Injectable()
 export class OpenFoodFactsService {
   private readonly logger = new Logger(OpenFoodFactsService.name);
-  private readonly apiUrl = appSettings.api.OPEN_FOOD_FACTS_API_URL;
+  private readonly apiUrl: string;
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.apiUrl = this.configService.get<string>('foodApi.openFoodFacts.apiUrl') || 'https://world.openfoodfacts.org/api/v2';
+  }
 
   async searchByQuery(query: string, limit: number = 20): Promise<OpenFoodFactsFood[]> {
     try {

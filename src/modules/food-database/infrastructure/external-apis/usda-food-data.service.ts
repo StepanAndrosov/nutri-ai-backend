@@ -1,7 +1,7 @@
 import { HttpService } from '@nestjs/axios';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
-import { appSettings } from 'src/setup/app-settings';
 import { NutritionInfo } from '../../domain/food.entity';
 
 interface USDANutrient {
@@ -45,8 +45,8 @@ export interface USDAFoodData {
 @Injectable()
 export class USDAFoodDataService {
   private readonly logger = new Logger(USDAFoodDataService.name);
-  private readonly apiUrl = appSettings.api.USDA_API_URL;
-  private readonly apiKey = appSettings.api.USDA_API_KEY;
+  private readonly apiUrl: string;
+  private readonly apiKey: string;
 
   // USDA nutrient IDs mapping
   private readonly nutrientIds = {
@@ -66,7 +66,13 @@ export class USDAFoodDataService {
     POTASSIUM: 1092, // Potassium
   };
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {
+    this.apiUrl = this.configService.get<string>('foodApi.usda.apiUrl') || 'https://api.nal.usda.gov/fdc/v1';
+    this.apiKey = this.configService.get<string>('foodApi.usda.apiKey') || 'DEMO_KEY';
+  }
 
   async searchByQuery(query: string, limit: number = 20): Promise<USDAFoodData[]> {
     try {

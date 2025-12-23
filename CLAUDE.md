@@ -85,11 +85,32 @@ The `src/core/` directory contains shared infrastructure:
 
 ### Configuration
 
-- `src/setup/app-settings.ts`: Centralized configuration using environment variables
-  - `EnvironmentSettings`: Environment type management (DEVELOPMENT, STAGING, PRODUCTION, TESTING)
-  - `APISettings`: Application settings (port, database URI, hash rounds)
-  - Uses dotenv for environment variable loading
-  - Provides defaults for missing environment variables
+The application uses NestJS `@nestjs/config` module for configuration management:
+
+- **Configuration Files** (`src/config/`):
+  - `app.config.ts`: Application settings (port, hash rounds, environment)
+  - `database.config.ts`: Database connection configuration
+  - `jwt.config.ts`: JWT authentication settings
+  - `google.config.ts`: Google OAuth configuration
+  - `food-api.config.ts`: External food API settings (USDA, OpenFoodFacts)
+  - `env.validation.ts`: Environment variable validation using class-validator
+  - `index.ts`: Barrel export for all configuration modules
+
+- **ConfigModule Setup**:
+  - Global module configured in `AppModule`
+  - Automatic environment variable validation on startup
+  - Namespace-based configuration using `registerAs()`
+  - Cached configuration for performance
+
+- **Using Configuration in Services**:
+  ```typescript
+  constructor(private readonly configService: ConfigService) {}
+
+  someMethod() {
+    const port = this.configService.get<number>('app.port');
+    const mongoUri = this.configService.get<string>('database.mongoUri');
+  }
+  ```
 
 - `src/setup/app.setup.ts`: Application initialization
 - `src/setup/swagger.setup.ts`: Swagger/OpenAPI configuration
@@ -168,13 +189,20 @@ For detailed JWT documentation, see `docs/JWT_AUTHENTICATION.md`
 
 ## Environment Variables
 
+All environment variables are validated on application startup using class-validator.
+
 Required environment variables (defaults shown):
-- `APP_PORT`: Application port (default: 7840)
-- `MONGO_CONNECTION_URI`: MongoDB connection string (default: mongodb://localhost/nest)
-- `HASH_ROUNDS`: Bcrypt hash rounds for passwords (default: 10)
-- `JWT_SECRET`: Secret key for JWT signing (default: 'your-secret-key-change-in-production')
-- `JWT_EXPIRES_IN`: JWT token expiration time (default: '7d')
 - `ENV`: Environment type - DEVELOPMENT, STAGING, PRODUCTION, or TESTING (default: DEVELOPMENT)
+- `APP_PORT`: Application port (default: 7840)
+- `MONGO_CONNECTION_URI`: MongoDB connection string (required, no default)
+- `HASH_ROUNDS`: Bcrypt hash rounds for passwords (default: 10)
+- `JWT_SECRET`: Secret key for JWT signing (required, no default)
+- `JWT_EXPIRES_IN`: JWT token expiration time (default: '7d')
+- `GOOGLE_CLIENT_ID`: Google OAuth Client ID (default: '')
+- `USDA_API_KEY`: USDA FoodData Central API key (default: 'DEMO_KEY')
+- `USDA_API_URL`: USDA API base URL (default: 'https://api.nal.usda.gov/fdc/v1')
+- `OPEN_FOOD_FACTS_API_URL`: OpenFoodFacts API base URL (default: 'https://world.openfoodfacts.org/api/v2')
+- `FOOD_CACHE_TTL_SECONDS`: Food data cache TTL in seconds (default: 604800)
 
 ## Key Dependencies
 

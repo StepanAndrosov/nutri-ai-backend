@@ -106,12 +106,13 @@ describe('AuthController', () => {
   describe('signup', () => {
     it('should successfully register a new user with all fields', async () => {
       // Arrange
+      const timezone = 'Europe/London';
       const signupData: SignupInputModel = {
         email: 'newuser@example.com',
         password: 'SecurePassword123!',
         displayName: 'New User',
+        timezone,
       };
-      const timezone = 'Europe/London';
       const createdUserId = '507f1f77bcf86cd799439012';
       const mockUser = createMockUserOutput({
         id: createdUserId,
@@ -126,7 +127,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      const result: AuthOutputModel = await controller.signup(signupData, timezone);
+      const result: AuthOutputModel = await controller.signup(signupData);
 
       // Assert
       expect(result).toBeDefined();
@@ -152,11 +153,12 @@ describe('AuthController', () => {
 
     it('should successfully register a new user with only required fields', async () => {
       // Arrange
+      const timezone = 'UTC';
       const signupData: SignupInputModel = {
         email: 'minimal@example.com',
         password: 'Password123!',
+        timezone,
       };
-      const timezone = 'UTC';
       const createdUserId = '507f1f77bcf86cd799439013';
       const mockUser = createMockUserOutput({
         id: createdUserId,
@@ -171,7 +173,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      const result: AuthOutputModel = await controller.signup(signupData, timezone);
+      const result: AuthOutputModel = await controller.signup(signupData);
 
       // Assert
       expect(result).toBeDefined();
@@ -191,12 +193,13 @@ describe('AuthController', () => {
 
     it('should throw DomainException with BadRequest when email already exists', async () => {
       // Arrange
+      const timezone = 'UTC';
       const signupData: SignupInputModel = {
         email: 'existing@example.com',
         password: 'Password123!',
         displayName: 'Existing User',
+        timezone,
       };
-      const timezone = 'UTC';
       const existingUser = createMockUserOutput({
         email: signupData.email,
       });
@@ -204,11 +207,11 @@ describe('AuthController', () => {
       jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(existingUser);
 
       // Act & Assert
-      await expect(controller.signup(signupData, timezone)).rejects.toThrow(DomainException);
-      await expect(controller.signup(signupData, timezone)).rejects.toThrow(
+      await expect(controller.signup(signupData)).rejects.toThrow(DomainException);
+      await expect(controller.signup(signupData)).rejects.toThrow(
         'User with this email already exists',
       );
-      await expect(controller.signup(signupData, timezone)).rejects.toMatchObject({
+      await expect(controller.signup(signupData)).rejects.toMatchObject({
         code: DomainExceptionCode.BadRequest,
       });
 
@@ -219,11 +222,12 @@ describe('AuthController', () => {
 
     it('should pass dailyKcalGoal as 0 to user creation', async () => {
       // Arrange
+      const timezone = 'UTC';
       const signupData: SignupInputModel = {
         email: 'test@example.com',
         password: 'Password123!',
+        timezone,
       };
-      const timezone = 'UTC';
       const createdUserId = '507f1f77bcf86cd799439014';
       const mockUser = createMockUserOutput({ id: createdUserId });
 
@@ -233,7 +237,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      await controller.signup(signupData, timezone);
+      await controller.signup(signupData);
 
       // Assert
       expect(usersService.create).toHaveBeenCalledWith(
@@ -247,11 +251,12 @@ describe('AuthController', () => {
 
     it('should handle different timezone values from header', async () => {
       // Arrange
+      const timezone = 'America/New_York';
       const signupData: SignupInputModel = {
         email: 'test@example.com',
         password: 'Password123!',
+        timezone,
       };
-      const timezone = 'America/New_York';
       const createdUserId = '507f1f77bcf86cd799439015';
       const mockUser = createMockUserOutput({
         id: createdUserId,
@@ -264,7 +269,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      const result = await controller.signup(signupData, timezone);
+      const result = await controller.signup(signupData);
 
       // Assert
       expect(result.user.timezone).toBe(timezone);
@@ -406,10 +411,11 @@ describe('AuthController', () => {
   describe('googleAuth', () => {
     it('should successfully authenticate new user with Google token', async () => {
       // Arrange
+      const timezone = 'Europe/Moscow';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'Europe/Moscow';
       const googlePayload = createMockGooglePayload();
       const createdUserId = '507f1f77bcf86cd799439020';
       const mockUser = createMockGoogleUser({
@@ -427,7 +433,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      const result: AuthOutputModel = await controller.googleAuth(googleAuthData, timezone);
+      const result: AuthOutputModel = await controller.googleAuth(googleAuthData);
 
       // Assert
       expect(result).toBeDefined();
@@ -450,10 +456,11 @@ describe('AuthController', () => {
 
     it('should successfully authenticate existing Google user', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const googlePayload = createMockGooglePayload();
       const existingUser = createMockGoogleUser({
         email: googlePayload.email,
@@ -465,7 +472,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      const result: AuthOutputModel = await controller.googleAuth(googleAuthData, timezone);
+      const result: AuthOutputModel = await controller.googleAuth(googleAuthData);
 
       // Assert
       expect(result).toBeDefined();
@@ -483,10 +490,11 @@ describe('AuthController', () => {
 
     it('should throw DomainException when Google token verification fails', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'invalid-google-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const verifyError = new DomainException({
         code: DomainExceptionCode.Unauthorized,
         message: 'Failed to verify Google token',
@@ -495,10 +503,8 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'verifyGoogleToken').mockRejectedValue(verifyError);
 
       // Act & Assert
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toMatchObject({
+      await expect(controller.googleAuth(googleAuthData)).rejects.toThrow(DomainException);
+      await expect(controller.googleAuth(googleAuthData)).rejects.toMatchObject({
         code: DomainExceptionCode.Unauthorized,
         message: 'Failed to verify Google token',
       });
@@ -510,10 +516,11 @@ describe('AuthController', () => {
 
     it('should throw DomainException when trying to link Google to existing local account', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const googlePayload = createMockGooglePayload({
         email: 'localuser@example.com',
       });
@@ -521,19 +528,18 @@ describe('AuthController', () => {
         email: googlePayload.email,
         authProvider: 'local',
         googleId: undefined,
+        timezone,
       });
 
       jest.spyOn(authService, 'verifyGoogleToken').mockResolvedValue(googlePayload);
       jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(existingLocalUser);
 
       // Act & Assert
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toThrow(
+      await expect(controller.googleAuth(googleAuthData)).rejects.toThrow(DomainException);
+      await expect(controller.googleAuth(googleAuthData)).rejects.toThrow(
         'An account with this email already exists. Please login with email and password.',
       );
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toMatchObject({
+      await expect(controller.googleAuth(googleAuthData)).rejects.toMatchObject({
         code: DomainExceptionCode.BadRequest,
       });
 
@@ -562,23 +568,23 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      await controller.googleAuth(googleAuthData, timezone);
+      await controller.googleAuth(googleAuthData);
 
       // Assert
       expect(usersService.createFromGoogle).toHaveBeenCalledWith(
         googlePayload.email,
         googlePayload.googleId,
         googlePayload.name,
-        timezone,
       );
     });
 
     it('should handle Google payload without optional name field', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const googlePayload = createMockGooglePayload({
         name: undefined,
       });
@@ -595,7 +601,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
       // Act
-      await controller.googleAuth(googleAuthData, timezone);
+      await controller.googleAuth(googleAuthData);
 
       // Assert
       expect(usersService.createFromGoogle).toHaveBeenCalledWith(
@@ -608,10 +614,11 @@ describe('AuthController', () => {
 
     it('should throw DomainException when user creation fails during Google auth', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const googlePayload = createMockGooglePayload();
       const createdUserId = '507f1f77bcf86cd799439023';
       const notFoundException = new DomainException({
@@ -627,12 +634,8 @@ describe('AuthController', () => {
         .mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.googleAuth(googleAuthData, timezone)).rejects.toThrow(
-        'user not found',
-      );
+      await expect(controller.googleAuth(googleAuthData)).rejects.toThrow(DomainException);
+      await expect(controller.googleAuth(googleAuthData)).rejects.toThrow('user not found');
 
       expect(authService.verifyGoogleToken).toHaveBeenCalled();
       expect(usersService.createFromGoogle).toHaveBeenCalled();
@@ -641,10 +644,11 @@ describe('AuthController', () => {
 
     it('should generate JWT token for Google authenticated user', async () => {
       // Arrange
+      const timezone = 'UTC';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'UTC';
       const googlePayload = createMockGooglePayload();
       const existingUser = createMockGoogleUser({
         id: 'google-user-id-123',
@@ -656,7 +660,7 @@ describe('AuthController', () => {
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('google-jwt-token-xyz');
 
       // Act
-      const result = await controller.googleAuth(googleAuthData, timezone);
+      const result = await controller.googleAuth(googleAuthData);
 
       // Assert
       expect(result.token).toBe('google-jwt-token-xyz');

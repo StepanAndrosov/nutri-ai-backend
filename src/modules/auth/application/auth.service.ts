@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import bcrypt from 'bcrypt';
 import { OAuth2Client } from 'google-auth-library';
 import axios from 'axios';
-import { appSettings } from 'src/setup/app-settings';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 import { DomainException, Extension } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
@@ -19,12 +19,17 @@ export interface GoogleTokenPayload {
 export class AuthService {
   private googleClient: OAuth2Client;
 
-  constructor(private readonly jwtService: JwtService) {
-    this.googleClient = new OAuth2Client(appSettings.api.GOOGLE_CLIENT_ID);
+  constructor(
+    private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
+  ) {
+    const googleClientId = this.configService.get<string>('google.clientId') || '';
+    this.googleClient = new OAuth2Client(googleClientId);
   }
 
   async generatePasswordHash(password: string): Promise<string> {
-    const hash: string = await bcrypt.hash(password, appSettings.api.HASH_ROUNDS);
+    const hashRounds = this.configService.get<number>('app.hashRounds') || 10;
+    const hash: string = await bcrypt.hash(password, hashRounds);
     return hash;
   }
 
@@ -85,9 +90,10 @@ export class AuthService {
   }
 
   private async verifyGoogleIdToken(idToken: string): Promise<GoogleTokenPayload> {
+    const googleClientId = this.configService.get<string>('google.clientId') || '';
     const ticket = await this.googleClient.verifyIdToken({
       idToken,
-      audience: appSettings.api.GOOGLE_CLIENT_ID,
+      audience: googleClientId,
     });
 
     const payload = ticket.getPayload();

@@ -1,15 +1,35 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
-import { appSettings } from './setup/app-settings';
 import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FoodDatabaseModule } from './modules/food-database/food-database.module';
+import {
+  appConfig,
+  databaseConfig,
+  jwtConfig,
+  googleConfig,
+  foodApiConfig,
+  validate,
+} from './config';
 
 @Module({
   imports: [
-    MongooseModule.forRoot(appSettings.api.MONGO_CONNECTION_URI),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      load: [appConfig, databaseConfig, jwtConfig, googleConfig, foodApiConfig],
+      validate,
+      cache: true,
+    }),
+    MongooseModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        uri: configService.get<string>('database.mongoUri'),
+      }),
+      inject: [ConfigService],
+    }),
     UserAccountsModule,
     AuthModule,
     FoodDatabaseModule,
