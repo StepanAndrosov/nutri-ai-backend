@@ -63,9 +63,9 @@ export class AuthController {
   async login(@Body() loginData: LoginInputModel): Promise<AuthOutputModel> {
     const { email, password } = loginData;
 
-    // Find user by email
-    const user = await this.usersQueryRepository.getByEmail(email);
-    if (!user) {
+    // Find user by email with password for authentication
+    const userWithPassword = await this.usersQueryRepository.getByEmailWithPassword(email);
+    if (!userWithPassword) {
       throw new DomainException({
         code: DomainExceptionCode.Unauthorized,
         message: 'Invalid email or password',
@@ -75,7 +75,7 @@ export class AuthController {
     // Verify password
     const isPasswordValid = await this.authService.comparePasswords(
       password,
-      user.passwordHash ?? '',
+      userWithPassword.passwordHash ?? '',
     );
     if (!isPasswordValid) {
       throw new DomainException({
@@ -83,6 +83,9 @@ export class AuthController {
         message: 'Invalid email or password',
       });
     }
+
+    // Get user without password for response
+    const user = await this.usersQueryRepository.getByIdOrNotFoundFail(userWithPassword.id);
 
     // Generate JWT access token
     const token = await this.authService.generateAccessToken(user.id, user.email);

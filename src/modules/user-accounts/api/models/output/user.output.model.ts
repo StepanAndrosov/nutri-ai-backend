@@ -15,12 +15,6 @@ export class UserOutputModel {
   email: string;
 
   @ApiPropertyOptional({
-    description: 'Hashed password (only for local auth)',
-    example: '$2b$10$...',
-  })
-  passwordHash?: string;
-
-  @ApiPropertyOptional({
     description: 'Display name for the user',
     example: 'John Doe',
   })
@@ -65,7 +59,6 @@ export const UserOutputModelMapper = (user: UserDocument): UserOutputModel => {
 
   outputModel.id = user.id;
   outputModel.email = user.email;
-  outputModel.passwordHash = user.passwordHash;
   outputModel.displayName = user.displayName;
   outputModel.timezone = user.timezone;
   outputModel.dailyKcalGoal = user.dailyKcalGoal;

@@ -9,6 +9,10 @@ import {
 import { FilterQuery } from 'mongoose';
 import { DomainException } from 'src/core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from 'src/core/exceptions/domain-exception-codes';
+import {
+  UserWithPasswordModel,
+  UserWithPasswordModelMapper,
+} from './models/user-with-password.model';
 
 @Injectable()
 export class UsersQueryRepository {
@@ -89,5 +93,21 @@ export class UsersQueryRepository {
       pagination.pageSize,
       totalCount,
     );
+  }
+
+  // Methods for internal use (authentication) - includes passwordHash
+  // NEVER expose these methods in API responses
+
+  async getByEmailWithPassword(email: string): Promise<UserWithPasswordModel | null> {
+    const user = await this.UserModel.findOne({
+      email: email,
+      deletedAt: null,
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    return UserWithPasswordModelMapper(user);
   }
 }

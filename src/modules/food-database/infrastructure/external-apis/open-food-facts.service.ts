@@ -63,7 +63,9 @@ export class OpenFoodFactsService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.apiUrl = this.configService.get<string>('foodApi.openFoodFacts.apiUrl') || 'https://world.openfoodfacts.org/api/v2';
+    this.apiUrl =
+      this.configService.get<string>('foodApi.openFoodFacts.apiUrl') ||
+      'https://world.openfoodfacts.org/api/v2';
   }
 
   async searchByQuery(query: string, limit: number = 20): Promise<OpenFoodFactsFood[]> {

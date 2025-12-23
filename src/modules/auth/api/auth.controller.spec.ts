@@ -24,7 +24,6 @@ describe('AuthController', () => {
     return {
       id: '507f1f77bcf86cd799439011',
       email: 'test@example.com',
-      passwordHash: '$2b$10$hashedPassword123',
       displayName: 'Test User',
       authProvider: 'local',
       timezone: 'UTC',
@@ -83,6 +82,7 @@ describe('AuthController', () => {
           provide: UsersQueryRepository,
           useValue: {
             getByEmail: jest.fn(),
+            getByEmailWithPassword: jest.fn(),
             getByIdOrNotFoundFail: jest.fn(),
           },
         },
@@ -290,12 +290,25 @@ describe('AuthController', () => {
         email: 'user@example.com',
         password: 'Password123!',
       };
-      const mockUser = createMockUserOutput({
+      const mockUserWithPassword = {
+        id: '507f1f77bcf86cd799439011',
         email: loginData.email,
         passwordHash: '$2b$10$hashedPassword',
+        displayName: 'Test User',
+        timezone: 'UTC',
+        dailyKcalGoal: 2000,
+        authProvider: 'local' as const,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
+      const mockUser = createMockUserOutput({
+        id: mockUserWithPassword.id,
+        email: loginData.email,
       });
 
-      jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(mockUser);
+      jest
+        .spyOn(usersQueryRepository, 'getByEmailWithPassword')
+        .mockResolvedValue(mockUserWithPassword);
+      jest.spyOn(usersQueryRepository, 'getByIdOrNotFoundFail').mockResolvedValue(mockUser);
       jest.spyOn(authService, 'comparePasswords').mockResolvedValue(true);
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('mock-jwt-token');
 
@@ -306,10 +319,10 @@ describe('AuthController', () => {
       expect(result).toBeDefined();
       expect(result.token).toBe('mock-jwt-token');
       expect(result.user).toEqual(mockUser);
-      expect(usersQueryRepository.getByEmail).toHaveBeenCalledWith(loginData.email);
+      expect(usersQueryRepository.getByEmailWithPassword).toHaveBeenCalledWith(loginData.email);
       expect(authService.comparePasswords).toHaveBeenCalledWith(
         loginData.password,
-        mockUser.passwordHash,
+        mockUserWithPassword.passwordHash,
       );
       expect(authService.generateAccessToken).toHaveBeenCalledWith(mockUser.id, mockUser.email);
     });
@@ -321,7 +334,7 @@ describe('AuthController', () => {
         password: 'Password123!',
       };
 
-      jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(null);
+      jest.spyOn(usersQueryRepository, 'getByEmailWithPassword').mockResolvedValue(null);
 
       // Act & Assert
       await expect(controller.login(loginData)).rejects.toThrow(DomainException);
@@ -330,7 +343,7 @@ describe('AuthController', () => {
         code: DomainExceptionCode.Unauthorized,
       });
 
-      expect(usersQueryRepository.getByEmail).toHaveBeenCalledWith(loginData.email);
+      expect(usersQueryRepository.getByEmailWithPassword).toHaveBeenCalledWith(loginData.email);
       expect(authService.comparePasswords).not.toHaveBeenCalled();
       expect(authService.generateAccessToken).not.toHaveBeenCalled();
     });
@@ -341,12 +354,20 @@ describe('AuthController', () => {
         email: 'user@example.com',
         password: 'WrongPassword',
       };
-      const mockUser = createMockUserOutput({
+      const mockUserWithPassword = {
+        id: '507f1f77bcf86cd799439011',
         email: loginData.email,
         passwordHash: '$2b$10$hashedPassword',
-      });
+        displayName: 'Test User',
+        timezone: 'UTC',
+        dailyKcalGoal: 2000,
+        authProvider: 'local' as const,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
 
-      jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(mockUser);
+      jest
+        .spyOn(usersQueryRepository, 'getByEmailWithPassword')
+        .mockResolvedValue(mockUserWithPassword);
       jest.spyOn(authService, 'comparePasswords').mockResolvedValue(false);
 
       // Act & Assert
@@ -356,10 +377,10 @@ describe('AuthController', () => {
         code: DomainExceptionCode.Unauthorized,
       });
 
-      expect(usersQueryRepository.getByEmail).toHaveBeenCalledWith(loginData.email);
+      expect(usersQueryRepository.getByEmailWithPassword).toHaveBeenCalledWith(loginData.email);
       expect(authService.comparePasswords).toHaveBeenCalledWith(
         loginData.password,
-        mockUser.passwordHash,
+        mockUserWithPassword.passwordHash,
       );
       expect(authService.generateAccessToken).not.toHaveBeenCalled();
     });
@@ -370,12 +391,20 @@ describe('AuthController', () => {
         email: 'user@example.com',
         password: 'Password123!',
       };
-      const mockUser = createMockUserOutput({
+      const mockUserWithPassword = {
+        id: '507f1f77bcf86cd799439011',
         email: loginData.email,
         passwordHash: undefined,
-      });
+        displayName: 'Test User',
+        timezone: 'UTC',
+        dailyKcalGoal: 2000,
+        authProvider: 'local' as const,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
 
-      jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(mockUser);
+      jest
+        .spyOn(usersQueryRepository, 'getByEmailWithPassword')
+        .mockResolvedValue(mockUserWithPassword);
       jest.spyOn(authService, 'comparePasswords').mockResolvedValue(false);
 
       // Act & Assert
@@ -390,12 +419,25 @@ describe('AuthController', () => {
         email: 'user@example.com',
         password: 'Password123!',
       };
+      const mockUserWithPassword = {
+        id: 'user-id-123',
+        email: loginData.email,
+        passwordHash: '$2b$10$hashedPassword',
+        displayName: 'Test User',
+        timezone: 'UTC',
+        dailyKcalGoal: 2000,
+        authProvider: 'local' as const,
+        createdAt: new Date('2024-01-01T00:00:00.000Z'),
+      };
       const mockUser = createMockUserOutput({
         id: 'user-id-123',
         email: loginData.email,
       });
 
-      jest.spyOn(usersQueryRepository, 'getByEmail').mockResolvedValue(mockUser);
+      jest
+        .spyOn(usersQueryRepository, 'getByEmailWithPassword')
+        .mockResolvedValue(mockUserWithPassword);
+      jest.spyOn(usersQueryRepository, 'getByIdOrNotFoundFail').mockResolvedValue(mockUser);
       jest.spyOn(authService, 'comparePasswords').mockResolvedValue(true);
       jest.spyOn(authService, 'generateAccessToken').mockResolvedValue('generated-token-abc');
 

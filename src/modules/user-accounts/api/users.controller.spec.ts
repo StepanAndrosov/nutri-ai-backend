@@ -21,7 +21,6 @@ describe('UsersController', () => {
     return {
       id: '507f1f77bcf86cd799439011',
       email: 'test@example.com',
-      passwordHash: '$2b$10$hashedPassword123',
       displayName: 'Test User',
       timezone: 'UTC',
       dailyKcalGoal: 2000,
@@ -277,7 +276,6 @@ describe('UsersController', () => {
       // Assert
       expect(result).not.toBeNull();
       expect(result.email).toBe('test@example.com');
-      expect(result.passwordHash).toBeDefined();
       expect(result.displayName).toBeUndefined();
       expect(result.timezone).toBeUndefined();
       expect(result.dailyKcalGoal).toBeUndefined();

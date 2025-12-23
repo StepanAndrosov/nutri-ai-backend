@@ -70,7 +70,8 @@ export class USDAFoodDataService {
     private readonly httpService: HttpService,
     private readonly configService: ConfigService,
   ) {
-    this.apiUrl = this.configService.get<string>('foodApi.usda.apiUrl') || 'https://api.nal.usda.gov/fdc/v1';
+    this.apiUrl =
+      this.configService.get<string>('foodApi.usda.apiUrl') || 'https://api.nal.usda.gov/fdc/v1';
     this.apiKey = this.configService.get<string>('foodApi.usda.apiKey') || 'DEMO_KEY';
   }
 
