@@ -249,7 +249,7 @@ describe('AuthController', () => {
       );
     });
 
-    it('should handle different timezone values from header', async () => {
+    it('should handle different timezone values from request body', async () => {
       // Arrange
       const timezone = 'America/New_York';
       const signupData: SignupInputModel = {
@@ -548,12 +548,13 @@ describe('AuthController', () => {
       expect(usersService.createFromGoogle).not.toHaveBeenCalled();
     });
 
-    it('should create new user with timezone from header', async () => {
+    it('should create new user with timezone from request body', async () => {
       // Arrange
+      const timezone = 'Asia/Tokyo';
       const googleAuthData: GoogleAuthInputModel = {
         idToken: 'valid-google-id-token',
+        timezone,
       };
-      const timezone = 'Asia/Tokyo';
       const googlePayload = createMockGooglePayload();
       const createdUserId = '507f1f77bcf86cd799439021';
       const mockUser = createMockGoogleUser({
@@ -575,6 +576,7 @@ describe('AuthController', () => {
         googlePayload.email,
         googlePayload.googleId,
         googlePayload.name,
+        timezone,
       );
     });
 
