@@ -9,8 +9,8 @@ export class FoodQueryRepository {
 
   async searchByText(query: string, limit: number = 20): Promise<Food[]> {
     return this.foodModel
-      .find({ $text: { $search: query }}, { score: { $meta: 'textScore' }})
-      .sort({ score: { $meta: 'textScore' }})
+      .find({ $text: { $search: query } }, { score: { $meta: 'textScore' } })
+      .sort({ score: { $meta: 'textScore' } })
       .limit(limit)
       .exec();
   }

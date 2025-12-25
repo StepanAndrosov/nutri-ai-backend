@@ -6,6 +6,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FoodDatabaseModule } from './modules/food-database/food-database.module';
+import { ProductsModule } from './modules/products/products.module';
 import {
   appConfig,
   databaseConfig,
@@ -33,6 +34,7 @@ import {
     UserAccountsModule,
     AuthModule,
     FoodDatabaseModule,
+    ProductsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
