@@ -7,6 +7,8 @@ import { UserAccountsModule } from './modules/user-accounts/user-accounts.module
 import { AuthModule } from './modules/auth/auth.module';
 import { FoodDatabaseModule } from './modules/food-database/food-database.module';
 import { ProductsModule } from './modules/products/products.module';
+import { DaysModule } from './modules/days/days.module';
+import { MealsModule } from './modules/meals/meals.module';
 import {
   appConfig,
   databaseConfig,
@@ -26,7 +28,7 @@ import {
     }),
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         uri: configService.get<string>('database.mongoUri'),
       }),
       inject: [ConfigService],
@@ -35,6 +37,8 @@ import {
     AuthModule,
     FoodDatabaseModule,
     ProductsModule,
+    DaysModule,
+    MealsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

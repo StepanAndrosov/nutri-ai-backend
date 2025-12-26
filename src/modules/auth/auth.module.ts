@@ -13,7 +13,7 @@ import { UserAccountsModule } from '../user-accounts/user-accounts.module';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
-      useFactory: async (configService: ConfigService) => ({
+      useFactory: (configService: ConfigService) => ({
         secret: configService.get<string>('jwt.secret') || 'your-secret-key-change-in-production',
         signOptions: {
           expiresIn: (configService.get<string>('jwt.expiresIn') || '7d') as `${number}d`,

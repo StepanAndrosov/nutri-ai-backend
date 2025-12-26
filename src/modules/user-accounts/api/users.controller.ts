@@ -10,7 +10,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
-import { ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { PaginationWithSearchEmailTerm } from '../../../base/models/pagination.base.model';
 import { SortingPropertiesType } from '../../../base/types/sorting-properties.type';
 import { ParsedQs } from 'qs';
@@ -32,6 +32,7 @@ export class UsersController {
     private readonly usersQueryRepository: UsersQueryRepository,
   ) {}
   @Get()
+  @ApiOperation({ summary: 'Get all users with pagination and search' })
   async getAll(@Query() query: ParsedQs) {
     const pagination: PaginationWithSearchEmailTerm = new PaginationWithSearchEmailTerm(
       query,
@@ -42,11 +43,13 @@ export class UsersController {
   }
   @ApiParam({ name: 'id' })
   @Get(':id')
+  @ApiOperation({ summary: 'Get user by ID' })
   async getById(@Param('id') id: string): Promise<UserOutputModel> {
     return this.usersQueryRepository.getByIdOrNotFoundFail(id);
   }
 
   @Post()
+  @ApiOperation({ summary: 'Create a new user' })
   async create(@Body() createModel: UserCreateModel) {
     const { email, password, displayName, timezone, dailyKcalGoal } = createModel;
 
@@ -63,6 +66,7 @@ export class UsersController {
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete user by ID' })
   async delete(@Param('id') id: string) {
     const deletingResult: boolean = await this.usersService.delete(id);
 

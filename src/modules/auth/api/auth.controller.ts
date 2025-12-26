@@ -25,6 +25,7 @@ export class AuthController {
 
   @Post('signup')
   @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Register a new user account' })
   async signup(@Body() signupData: SignupInputModel): Promise<AuthOutputModel> {
     const { email, password, displayName, timezone } = signupData;
 
@@ -60,6 +61,7 @@ export class AuthController {
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Login via email' })
   async login(@Body() loginData: LoginInputModel): Promise<AuthOutputModel> {
     const { email, password } = loginData;
 
@@ -144,6 +146,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get current authenticated user' })
   async getCurrentUser(@CurrentUser() currentUser: CurrentUserType): Promise<UserOutputModel> {
     return await this.usersQueryRepository.getByIdOrNotFoundFail(currentUser.userId);
   }
