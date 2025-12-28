@@ -804,5 +804,87 @@ describe('DaysController', () => {
         jest.clearAllMocks();
       }
     });
+
+    it('should throw DomainException when meal with same type already exists for the day', async () => {
+      // Arrange
+      const params: GetDayByDateParams = { date: '2025-10-20' };
+      const currentUser = createMockCurrentUser();
+      const createMealInput: CreateMealInputModel = {
+        type: 'breakfast',
+        items: [
+          {
+            productId: '507f1f77bcf86cd799439030',
+            quantity: 100,
+          },
+        ],
+        source: 'manual',
+      };
+      const duplicateTypeException = new DomainException({
+        code: DomainExceptionCode.BadRequest,
+        message: "meal with type 'breakfast' already exists for this day",
+      });
+
+      jest.spyOn(mealsService, 'createMealForDate').mockRejectedValue(duplicateTypeException);
+
+      // Act & Assert
+      await expect(controller.createMeal(params, createMealInput, currentUser)).rejects.toThrow(
+        DomainException,
+      );
+      await expect(controller.createMeal(params, createMealInput, currentUser)).rejects.toThrow(
+        "meal with type 'breakfast' already exists for this day",
+      );
+      await expect(
+        controller.createMeal(params, createMealInput, currentUser),
+      ).rejects.toMatchObject({
+        code: DomainExceptionCode.BadRequest,
+      });
+
+      expect(mealsService.createMealForDate).toHaveBeenCalledWith(currentUser.userId, params.date, {
+        type: MealType.BREAKFAST,
+        time: undefined,
+        items: createMealInput.items,
+        source: MealSource.MANUAL,
+        aiConfidence: undefined,
+      });
+    });
+
+    it('should throw DomainException for each duplicate meal type', async () => {
+      // Arrange
+      const params: GetDayByDateParams = { date: '2025-10-20' };
+      const currentUser = createMockCurrentUser();
+      const mealTypes: Array<{ type: string; enumValue: MealType }> = [
+        { type: 'breakfast', enumValue: MealType.BREAKFAST },
+        { type: 'lunch', enumValue: MealType.LUNCH },
+        { type: 'dinner', enumValue: MealType.DINNER },
+        { type: 'snack', enumValue: MealType.SNACK },
+      ];
+
+      for (const mealType of mealTypes) {
+        const createMealInput: CreateMealInputModel = {
+          type: mealType.type,
+          items: [{ productId: '507f1f77bcf86cd799439030', quantity: 100 }],
+          source: 'manual',
+        };
+        const duplicateTypeException = new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: `meal with type '${mealType.type}' already exists for this day`,
+        });
+
+        jest.spyOn(mealsService, 'createMealForDate').mockRejectedValue(duplicateTypeException);
+
+        // Act & Assert
+        await expect(controller.createMeal(params, createMealInput, currentUser)).rejects.toThrow(
+          DomainException,
+        );
+        await expect(
+          controller.createMeal(params, createMealInput, currentUser),
+        ).rejects.toMatchObject({
+          code: DomainExceptionCode.BadRequest,
+          message: `meal with type '${mealType.type}' already exists for this day`,
+        });
+
+        jest.clearAllMocks();
+      }
+    });
   });
 });
