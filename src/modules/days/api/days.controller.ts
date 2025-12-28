@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../../auth/api/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/api/decorators/current-user.decorator';
 import { CurrentUserType } from '../../auth/api/types/request-with-user.type';
 import { DayEntryOutputModel } from './models/output/day-entry.output.model';
-import { GetDayByDateParams } from './input-dto/get-day-by-date-params.input-dto';
+import { GetDayByDateParams } from './models/input/get-day-by-date-params.input-dto';
 import { CreateMealInputModel } from '../../meals/api/models/input/create-meal.input.model';
 import { MealOutputModel } from '../../meals/api/models/output/meal.output.model';
 import { MealSource, MealType } from '../../meals/domain/meal.entity';

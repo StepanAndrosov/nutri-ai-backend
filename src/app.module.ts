@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { MongooseModule } from '@nestjs/mongoose';
+import { CoreModule } from './core/core.module';
 import { UserAccountsModule } from './modules/user-accounts/user-accounts.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FoodDatabaseModule } from './modules/food-database/food-database.module';
@@ -20,6 +21,7 @@ import {
 
 @Module({
   imports: [
+    CoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
       load: [appConfig, databaseConfig, jwtConfig, googleConfig, foodApiConfig],

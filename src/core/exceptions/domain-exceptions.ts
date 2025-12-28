@@ -17,5 +17,9 @@ export class DomainException extends Error {
     this.message = errorInfo.message;
     this.code = errorInfo.code;
     this.extensions = errorInfo.extensions || [];
+
+    // Fix for TypeScript's inheritance from Error
+    // Ensures instanceof checks work correctly
+    Object.setPrototypeOf(this, DomainException.prototype);
   }
 }
