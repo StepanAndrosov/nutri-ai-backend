@@ -28,12 +28,6 @@ export class MealOutputModel {
   })
   time?: string;
 
-  @ApiPropertyOptional({
-    description: 'Meal name',
-    example: 'Овсянка с бананом',
-  })
-  name?: string;
-
   @ApiProperty({
     description: 'Food items in this meal',
     type: [FoodItemOutputModel],
@@ -84,7 +78,6 @@ export const MealOutputModelMapper = (meal: MealDocument): MealOutputModel => {
   output.dayEntryId = meal.dayEntryId;
   output.type = meal.type;
   output.time = meal.time;
-  output.name = meal.name;
   output.items = meal.items.map((item) => {
     const foodItemOutput = new FoodItemOutputModel();
     foodItemOutput.id = (item as any)._id?.toString();

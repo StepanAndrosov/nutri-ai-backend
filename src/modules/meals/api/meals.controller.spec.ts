@@ -3,7 +3,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MealsController } from './meals.controller';
 import { MealsService } from '../application/meals.service';
 import { MealOutputModel } from './models/output/meal.output.model';
-import { UpdateMealInputModel } from './models/input/update-meal.input.model';
+import { AddProductToMealInputModel } from './models/input/add-product-to-meal.input.model';
+import { RemoveProductFromMealInputModel } from './models/input/remove-product-from-meal.input.model';
 import { GetMealByIdParams } from './input-dto/get-meal-by-id-params.input-dto';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
@@ -37,7 +38,6 @@ describe('MealsController', () => {
     meal.dayEntryId = '507f1f77bcf86cd799439012';
     meal.type = 'breakfast';
     meal.time = '08:30';
-    meal.name = 'Овсянка с бананом';
     meal.items = [createMockFoodItem()];
     meal.totalKcal = 450;
     meal.source = 'manual';
@@ -64,7 +64,8 @@ describe('MealsController', () => {
           provide: MealsService,
           useValue: {
             getById: jest.fn(),
-            update: jest.fn(),
+            addOrUpdateProduct: jest.fn(),
+            removeProduct: jest.fn(),
             delete: jest.fn(),
           },
         },
@@ -169,7 +170,6 @@ describe('MealsController', () => {
       const mockMeal = createMockMeal({
         id: params.id,
         time: undefined,
-        name: undefined,
         aiConfidence: undefined,
       });
 
@@ -180,7 +180,6 @@ describe('MealsController', () => {
 
       // Assert
       expect(result.time).toBeUndefined();
-      expect(result.name).toBeUndefined();
       expect(result.aiConfidence).toBeUndefined();
       expect(mealsService.getById).toHaveBeenCalledWith(params.id, user.userId);
     });
@@ -248,208 +247,188 @@ describe('MealsController', () => {
     });
   });
 
-  describe('updateMeal', () => {
-    it('should successfully update meal with all fields', async () => {
+  describe('addOrUpdateProduct', () => {
+    it('should successfully add new product to meal', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        type: 'lunch',
-        time: '13:00',
-        name: 'Обновленный обед',
-        items: [],
-        totalKcal: 600,
-        source: 'manual',
-        aiConfidence: undefined,
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+        quantity: 150,
       };
+      const newFoodItem = createMockFoodItem({
+        productId: productData.productId,
+        quantity: productData.quantity,
+        kcal: 525, // 350 * 150 / 100
+      });
       const updatedMeal = createMockMeal({
         id: params.id,
-        type: 'lunch',
-        time: '13:00',
-        name: 'Обновленный обед',
-        totalKcal: 600,
-        source: 'manual',
-        updatedAt: new Date('2024-01-01T13:00:00.000Z'),
+        items: [newFoodItem],
+        totalKcal: 525,
       });
 
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result: MealOutputModel = await controller.updateMeal(params, updateData, user);
+      const result: MealOutputModel = await controller.addOrUpdateProduct(
+        params,
+        productData,
+        user,
+      );
 
       // Assert
       expect(result).toBeDefined();
       expect(result).toEqual(updatedMeal);
-      expect(result.type).toBe('lunch');
-      expect(result.time).toBe('13:00');
-      expect(result.name).toBe('Обновленный обед');
-      expect(result.totalKcal).toBe(600);
-      expect(mealsService.update).toHaveBeenCalledTimes(1);
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: updateData.type,
-        time: updateData.time,
-        name: updateData.name,
-        items: updateData.items,
-        totalKcal: updateData.totalKcal,
-        source: updateData.source,
-        aiConfidence: updateData.aiConfidence,
-      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].productId).toBe(productData.productId);
+      expect(result.items[0].quantity).toBe(productData.quantity);
+      expect(result.totalKcal).toBe(525);
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledTimes(1);
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        productData.quantity,
+      );
     });
 
-    it('should successfully update meal with only type field', async () => {
+    it('should successfully update existing product quantity in meal', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        type: 'dinner',
+      const existingProductId = '507f1f77bcf86cd799439020';
+      const productData: AddProductToMealInputModel = {
+        productId: existingProductId,
+        quantity: 200, // Updated quantity
       };
+      const updatedFoodItem = createMockFoodItem({
+        productId: existingProductId,
+        quantity: 200,
+        kcal: 700, // 350 * 200 / 100
+      });
       const updatedMeal = createMockMeal({
         id: params.id,
-        type: 'dinner',
+        items: [updatedFoodItem],
+        totalKcal: 700,
       });
 
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result = await controller.updateMeal(params, updateData, user);
+      const result = await controller.addOrUpdateProduct(params, productData, user);
 
       // Assert
-      expect(result.type).toBe('dinner');
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: 'dinner',
-        time: undefined,
-        name: undefined,
-        items: undefined,
-        totalKcal: undefined,
-        source: undefined,
-        aiConfidence: undefined,
-      });
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].productId).toBe(existingProductId);
+      expect(result.items[0].quantity).toBe(200);
+      expect(result.totalKcal).toBe(700);
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        productData.quantity,
+      );
     });
 
-    it('should successfully update meal with only time field', async () => {
+    it('should add product to meal that already has other products', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        time: '19:45',
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439021', // New product
+        quantity: 100,
       };
+      const existingItem = createMockFoodItem({
+        id: '507f1f77bcf86cd799439015',
+        productId: '507f1f77bcf86cd799439020',
+        kcal: 350,
+      });
+      const newItem = createMockFoodItem({
+        id: '507f1f77bcf86cd799439016',
+        productId: productData.productId,
+        quantity: productData.quantity,
+        kcal: 100,
+      });
       const updatedMeal = createMockMeal({
         id: params.id,
-        time: '19:45',
+        items: [existingItem, newItem],
+        totalKcal: 450, // 350 + 100
       });
 
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result = await controller.updateMeal(params, updateData, user);
+      const result = await controller.addOrUpdateProduct(params, productData, user);
 
       // Assert
-      expect(result.time).toBe('19:45');
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: undefined,
-        time: '19:45',
-        name: undefined,
-        items: undefined,
-        totalKcal: undefined,
-        source: undefined,
-        aiConfidence: undefined,
-      });
-    });
-
-    it('should successfully update meal with AI source and confidence', async () => {
-      // Arrange
-      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
-      const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        source: 'ai',
-        aiConfidence: 0.85,
-      };
-      const updatedMeal = createMockMeal({
-        id: params.id,
-        source: 'ai',
-        aiConfidence: 0.85,
-      });
-
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
-
-      // Act
-      const result = await controller.updateMeal(params, updateData, user);
-
-      // Assert
-      expect(result.source).toBe('ai');
-      expect(result.aiConfidence).toBe(0.85);
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: undefined,
-        time: undefined,
-        name: undefined,
-        items: undefined,
-        totalKcal: undefined,
-        source: 'ai',
-        aiConfidence: 0.85,
-      });
-    });
-
-    it('should successfully update meal totalKcal', async () => {
-      // Arrange
-      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
-      const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        totalKcal: 800,
-      };
-      const updatedMeal = createMockMeal({
-        id: params.id,
-        totalKcal: 800,
-      });
-
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
-
-      // Act
-      const result = await controller.updateMeal(params, updateData, user);
-
-      // Assert
-      expect(result.totalKcal).toBe(800);
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: undefined,
-        time: undefined,
-        name: undefined,
-        items: undefined,
-        totalKcal: 800,
-        source: undefined,
-        aiConfidence: undefined,
-      });
+      expect(result.items).toHaveLength(2);
+      expect(result.totalKcal).toBe(450);
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        productData.quantity,
+      );
     });
 
     it('should throw DomainException with NotFound when meal does not exist', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439099' };
       const user = createMockUser();
-      const updateData: UpdateMealInputModel = { type: 'lunch' };
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+        quantity: 150,
+      };
       const notFoundException = new DomainException({
         code: DomainExceptionCode.NotFound,
         message: 'meal not found',
       });
 
-      jest.spyOn(mealsService, 'update').mockRejectedValue(notFoundException);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toThrow(
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
         DomainException,
       );
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toThrow(
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
         'meal not found',
       );
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toMatchObject({
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toMatchObject({
         code: DomainExceptionCode.NotFound,
       });
 
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: 'lunch',
-        time: undefined,
-        name: undefined,
-        items: undefined,
-        totalKcal: undefined,
-        source: undefined,
-        aiConfidence: undefined,
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        productData.quantity,
+      );
+    });
+
+    it('should throw DomainException with NotFound when product does not exist', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439099', // Non-existent product
+        quantity: 150,
+      };
+      const notFoundException = new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'product not found',
+      });
+
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(notFoundException);
+
+      // Act & Assert
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
+        DomainException,
+      );
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
+        'product not found',
+      );
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toMatchObject({
+        code: DomainExceptionCode.NotFound,
       });
     });
 
@@ -457,61 +436,43 @@ describe('MealsController', () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser({ userId: 'different-user-id' });
-      const updateData: UpdateMealInputModel = { type: 'lunch' };
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+        quantity: 150,
+      };
       const forbiddenException = new DomainException({
         code: DomainExceptionCode.Forbidden,
         message: 'You can only update your own meals',
       });
 
-      jest.spyOn(mealsService, 'update').mockRejectedValue(forbiddenException);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(forbiddenException);
 
       // Act & Assert
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toThrow(
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
         DomainException,
       );
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toThrow(
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
         'You can only update your own meals',
       );
-      await expect(controller.updateMeal(params, updateData, user)).rejects.toMatchObject({
+      await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toMatchObject({
         code: DomainExceptionCode.Forbidden,
       });
 
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: 'lunch',
-        time: undefined,
-        name: undefined,
-        items: undefined,
-        totalKcal: undefined,
-        source: undefined,
-        aiConfidence: undefined,
-      });
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        productData.quantity,
+      );
     });
 
-    it('should update meal with different meal types', async () => {
+    it('should handle zero quantity (remove product scenario)', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser();
-      const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack', 'other'];
-
-      for (const type of mealTypes) {
-        const updateData: UpdateMealInputModel = { type };
-        const updatedMeal = createMockMeal({ type });
-        jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
-
-        // Act
-        const result = await controller.updateMeal(params, updateData, user);
-
-        // Assert
-        expect(result.type).toBe(type);
-      }
-    });
-
-    it('should pass empty items array when items field is provided', async () => {
-      // Arrange
-      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
-      const user = createMockUser();
-      const updateData: UpdateMealInputModel = {
-        items: [],
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+        quantity: 0,
       };
       const updatedMeal = createMockMeal({
         id: params.id,
@@ -519,22 +480,240 @@ describe('MealsController', () => {
         totalKcal: 0,
       });
 
-      jest.spyOn(mealsService, 'update').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result = await controller.updateMeal(params, updateData, user);
+      const result = await controller.addOrUpdateProduct(params, productData, user);
 
       // Assert
       expect(result.items).toEqual([]);
-      expect(mealsService.update).toHaveBeenCalledWith(params.id, user.userId, {
-        type: undefined,
-        time: undefined,
-        name: undefined,
-        items: [],
-        totalKcal: undefined,
-        source: undefined,
-        aiConfidence: undefined,
+      expect(result.totalKcal).toBe(0);
+      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+        0,
+      );
+    });
+
+    it('should recalculate totalKcal when updating product quantity', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: AddProductToMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+        quantity: 250,
+      };
+      const updatedFoodItem = createMockFoodItem({
+        productId: productData.productId,
+        quantity: 250,
+        kcal: 875, // 350 * 250 / 100
       });
+      const updatedMeal = createMockMeal({
+        id: params.id,
+        items: [updatedFoodItem],
+        totalKcal: 875,
+      });
+
+      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+
+      // Act
+      const result = await controller.addOrUpdateProduct(params, productData, user);
+
+      // Assert
+      expect(result.totalKcal).toBe(875);
+      expect(result.items[0].kcal).toBe(875);
+    });
+  });
+
+  describe('removeProduct', () => {
+    it('should successfully remove product from meal', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+      const updatedMeal = createMockMeal({
+        id: params.id,
+        items: [],
+        totalKcal: 0,
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
+
+      // Act
+      const result: MealOutputModel = await controller.removeProduct(params, productData, user);
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result).toEqual(updatedMeal);
+      expect(result.items).toHaveLength(0);
+      expect(result.totalKcal).toBe(0);
+      expect(mealsService.removeProduct).toHaveBeenCalledTimes(1);
+      expect(mealsService.removeProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+      );
+    });
+
+    it('should remove product and keep other products in meal', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+      const remainingItem = createMockFoodItem({
+        id: '507f1f77bcf86cd799439016',
+        productId: '507f1f77bcf86cd799439021',
+        name: 'Банан',
+        kcal: 100,
+      });
+      const updatedMeal = createMockMeal({
+        id: params.id,
+        items: [remainingItem],
+        totalKcal: 100,
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
+
+      // Act
+      const result = await controller.removeProduct(params, productData, user);
+
+      // Assert
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0].productId).toBe('507f1f77bcf86cd799439021');
+      expect(result.totalKcal).toBe(100);
+      expect(mealsService.removeProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+      );
+    });
+
+    it('should recalculate totalKcal after removing product', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+      const item1 = createMockFoodItem({
+        id: '507f1f77bcf86cd799439016',
+        productId: '507f1f77bcf86cd799439021',
+        kcal: 200,
+      });
+      const item2 = createMockFoodItem({
+        id: '507f1f77bcf86cd799439017',
+        productId: '507f1f77bcf86cd799439022',
+        kcal: 150,
+      });
+      const updatedMeal = createMockMeal({
+        id: params.id,
+        items: [item1, item2],
+        totalKcal: 350,
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
+
+      // Act
+      const result = await controller.removeProduct(params, productData, user);
+
+      // Assert
+      expect(result.items).toHaveLength(2);
+      expect(result.totalKcal).toBe(350);
+    });
+
+    it('should throw DomainException with NotFound when meal does not exist', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439099' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+      const notFoundException = new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'meal not found',
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
+
+      // Act & Assert
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        DomainException,
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        'meal not found',
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+        code: DomainExceptionCode.NotFound,
+      });
+
+      expect(mealsService.removeProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+      );
+    });
+
+    it('should throw DomainException with NotFound when product not found in meal', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439099', // Product not in meal
+      };
+      const notFoundException = new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'product not found in meal',
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
+
+      // Act & Assert
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        DomainException,
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        'product not found in meal',
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+        code: DomainExceptionCode.NotFound,
+      });
+    });
+
+    it('should throw DomainException with Forbidden when user does not own the meal', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser({ userId: 'different-user-id' });
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+      const forbiddenException = new DomainException({
+        code: DomainExceptionCode.Forbidden,
+        message: 'You can only update your own meals',
+      });
+
+      jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(forbiddenException);
+
+      // Act & Assert
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        DomainException,
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+        'You can only update your own meals',
+      );
+      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+        code: DomainExceptionCode.Forbidden,
+      });
+
+      expect(mealsService.removeProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+      );
     });
   });
 

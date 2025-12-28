@@ -35,9 +35,6 @@ export class Meal {
   @Prop({ type: String, required: false })
   time?: string;
 
-  @Prop({ type: String, required: false })
-  name?: string;
-
   @Prop({ type: [Object], default: [] })
   items: FoodItem[];
 

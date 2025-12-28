@@ -16,7 +16,6 @@ import { CreateMealItemInputModel } from '../api/models/input/create-meal-item.i
 export interface CreateMealData {
   type: MealType;
   time?: string;
-  name?: string;
   items: CreateMealItemInputModel[];
   source: MealSource;
   aiConfidence?: number;
@@ -28,7 +27,6 @@ export interface CreateMealData {
 export interface UpdateMealData {
   type?: MealType;
   time?: string;
-  name?: string;
   items?: FoodItem[];
   totalKcal?: number;
   source?: MealSource;
@@ -121,7 +119,6 @@ export class MealsService {
       dayEntryId: dayEntry.id,
       type: data.type,
       time: data.time,
-      name: data.name,
       items: foodItems,
       totalKcal,
       source: data.source,
@@ -189,7 +186,6 @@ export class MealsService {
     const updateData: Partial<{
       type: MealType;
       time: string;
-      name: string;
       items: FoodItem[];
       totalKcal: number;
       source: MealSource;
@@ -198,13 +194,186 @@ export class MealsService {
 
     if (data.type !== undefined) updateData.type = data.type;
     if (data.time !== undefined) updateData.time = data.time;
-    if (data.name !== undefined) updateData.name = data.name;
     if (data.items !== undefined) updateData.items = data.items;
     if (data.totalKcal !== undefined) updateData.totalKcal = data.totalKcal;
     if (data.source !== undefined) updateData.source = data.source;
     if (data.aiConfidence !== undefined) updateData.aiConfidence = data.aiConfidence;
 
     const updated = await this.mealsRepository.update(id, updateData);
+    if (!updated) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'meal not found',
+      });
+    }
+
+    // Update day entry consumed calories
+    await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+
+    // Return updated meal
+    const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+    return updatedMeal;
+  }
+
+  /**
+   * Add or update product in meal
+   * If product already exists in items, update its quantity
+   * If product doesn't exist, add it to items
+   * Recalculates totalKcal automatically
+   * @param id - Meal ID
+   * @param userId - User ID (for ownership check)
+   * @param productId - Product ID to add or update
+   * @param quantity - New quantity in grams
+   * @returns Updated meal output model
+   * @throws DomainException with NotFound code if meal or product doesn't exist
+   * @throws DomainException with Forbidden code if user doesn't own the meal
+   */
+  async addOrUpdateProduct(
+    id: string,
+    userId: string,
+    productId: string,
+    quantity: number,
+  ): Promise<MealOutputModel> {
+    // Check meal exists and get it
+    const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+
+    // Check ownership through day entry
+    const isOwner = await this.daysService.checkOwnership(existingMeal.dayEntryId, userId);
+    if (!isOwner) {
+      throw new DomainException({
+        code: DomainExceptionCode.Forbidden,
+        message: 'You can only update your own meals',
+      });
+    }
+
+    // Get product details
+    const product = await this.productsQueryRepository.getByIdOrNotFoundFail(productId);
+
+    // Find existing item with this productId
+    const existingItemIndex = existingMeal.items.findIndex((item) => item.productId === productId);
+
+    let updatedItems: FoodItem[];
+
+    if (existingItemIndex !== -1) {
+      // Product exists - update quantity and recalculate nutrition
+      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
+      const protein = product.proteinPer100g
+        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+      const fat = product.fatPer100g
+        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+      const carbs = product.carbsPer100g
+        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+
+      updatedItems = [...existingMeal.items];
+      updatedItems[existingItemIndex] = {
+        ...updatedItems[existingItemIndex],
+        quantity,
+        kcal,
+        protein,
+        fat,
+        carbs,
+      };
+    } else {
+      // Product doesn't exist - create new FoodItem and add to items
+      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
+      const protein = product.proteinPer100g
+        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+      const fat = product.fatPer100g
+        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+      const carbs = product.carbsPer100g
+        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
+        : undefined;
+
+      const newFoodItem: FoodItem = {
+        productId,
+        name: product.name,
+        quantity,
+        unit: 'g',
+        kcal,
+        protein,
+        fat,
+        carbs,
+        source: product.source,
+      };
+
+      updatedItems = [...existingMeal.items, newFoodItem];
+    }
+
+    // Recalculate total calories
+    const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+
+    // Update meal in database
+    const updated = await this.mealsRepository.update(id, {
+      items: updatedItems,
+      totalKcal,
+    });
+
+    if (!updated) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'meal not found',
+      });
+    }
+
+    // Update day entry consumed calories
+    await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+
+    // Return updated meal
+    const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+    return updatedMeal;
+  }
+
+  /**
+   * Remove product from meal
+   * Finds and removes the product from items array
+   * Recalculates totalKcal automatically
+   * @param id - Meal ID
+   * @param userId - User ID (for ownership check)
+   * @param productId - Product ID to remove
+   * @returns Updated meal output model
+   * @throws DomainException with NotFound code if meal doesn't exist or product not found in meal
+   * @throws DomainException with Forbidden code if user doesn't own the meal
+   */
+  async removeProduct(id: string, userId: string, productId: string): Promise<MealOutputModel> {
+    // Check meal exists and get it
+    const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+
+    // Check ownership through day entry
+    const isOwner = await this.daysService.checkOwnership(existingMeal.dayEntryId, userId);
+    if (!isOwner) {
+      throw new DomainException({
+        code: DomainExceptionCode.Forbidden,
+        message: 'You can only update your own meals',
+      });
+    }
+
+    // Find existing item with this productId
+    const existingItemIndex = existingMeal.items.findIndex((item) => item.productId === productId);
+
+    if (existingItemIndex === -1) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'product not found in meal',
+      });
+    }
+
+    // Remove product from items array
+    const updatedItems = existingMeal.items.filter((item) => item.productId !== productId);
+
+    // Recalculate total calories
+    const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+
+    // Update meal in database
+    const updated = await this.mealsRepository.update(id, {
+      items: updatedItems,
+      totalKcal,
+    });
+
     if (!updated) {
       throw new DomainException({
         code: DomainExceptionCode.NotFound,

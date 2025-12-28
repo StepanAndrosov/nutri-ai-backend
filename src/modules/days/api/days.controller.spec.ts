@@ -53,7 +53,6 @@ describe('DaysController', () => {
       dayEntryId: '507f1f77bcf86cd799439011',
       type: MealType.BREAKFAST,
       time: '08:30',
-      name: 'Breakfast Oatmeal',
       items: [mockFoodItem],
       totalKcal: 350,
       source: MealSource.MANUAL,
@@ -120,13 +119,11 @@ describe('DaysController', () => {
       const mockMeal1 = createMockMeal({
         id: '507f1f77bcf86cd799439020',
         type: MealType.BREAKFAST,
-        name: 'Morning Oatmeal',
         totalKcal: 350,
       });
       const mockMeal2 = createMockMeal({
         id: '507f1f77bcf86cd799439021',
         type: MealType.LUNCH,
-        name: 'Chicken Salad',
         totalKcal: 550,
         time: '13:00',
       });
@@ -281,7 +278,6 @@ describe('DaysController', () => {
       const createMealInput: CreateMealInputModel = {
         type: 'breakfast',
         time: '08:30',
-        name: 'Morning Oatmeal',
         items: [
           {
             productId: '507f1f77bcf86cd799439030',
@@ -293,7 +289,6 @@ describe('DaysController', () => {
       const mockCreatedMeal = createMockMeal({
         type: MealType.BREAKFAST,
         time: '08:30',
-        name: 'Morning Oatmeal',
         source: MealSource.MANUAL,
       });
 
@@ -307,13 +302,11 @@ describe('DaysController', () => {
       expect(result).toEqual(mockCreatedMeal);
       expect(result.type).toBe(MealType.BREAKFAST);
       expect(result.time).toBe('08:30');
-      expect(result.name).toBe('Morning Oatmeal');
       expect(result.source).toBe(MealSource.MANUAL);
       expect(mealsService.createMealForDate).toHaveBeenCalledTimes(1);
       expect(mealsService.createMealForDate).toHaveBeenCalledWith(currentUser.userId, params.date, {
         type: MealType.BREAKFAST,
         time: '08:30',
-        name: 'Morning Oatmeal',
         items: createMealInput.items,
         source: MealSource.MANUAL,
         aiConfidence: undefined,
@@ -337,7 +330,6 @@ describe('DaysController', () => {
       const mockCreatedMeal = createMockMeal({
         type: MealType.LUNCH,
         time: undefined,
-        name: undefined,
         source: MealSource.MANUAL,
       });
 
@@ -350,11 +342,9 @@ describe('DaysController', () => {
       expect(result).toBeDefined();
       expect(result.type).toBe(MealType.LUNCH);
       expect(result.time).toBeUndefined();
-      expect(result.name).toBeUndefined();
       expect(mealsService.createMealForDate).toHaveBeenCalledWith(currentUser.userId, params.date, {
         type: MealType.LUNCH,
         time: undefined,
-        name: undefined,
         items: createMealInput.items,
         source: MealSource.MANUAL,
         aiConfidence: undefined,
@@ -367,7 +357,6 @@ describe('DaysController', () => {
       const currentUser = createMockCurrentUser();
       const createMealInput: CreateMealInputModel = {
         type: 'dinner',
-        name: 'AI Detected Meal',
         items: [
           {
             productId: '507f1f77bcf86cd799439032',
@@ -379,7 +368,6 @@ describe('DaysController', () => {
       };
       const mockCreatedMeal = createMockMeal({
         type: MealType.DINNER,
-        name: 'AI Detected Meal',
         source: MealSource.AI,
         aiConfidence: 0.95,
       });
@@ -396,7 +384,6 @@ describe('DaysController', () => {
       expect(mealsService.createMealForDate).toHaveBeenCalledWith(currentUser.userId, params.date, {
         type: MealType.DINNER,
         time: undefined,
-        name: 'AI Detected Meal',
         items: createMealInput.items,
         source: MealSource.AI,
         aiConfidence: 0.95,
@@ -409,7 +396,6 @@ describe('DaysController', () => {
       const currentUser = createMockCurrentUser();
       const createMealInput: CreateMealInputModel = {
         type: 'lunch',
-        name: 'Complex Meal',
         items: [
           {
             productId: '507f1f77bcf86cd799439030',
@@ -463,7 +449,6 @@ describe('DaysController', () => {
         source: 'usda',
       };
       const mockCreatedMeal = createMockMeal({
-        name: 'Complex Meal',
         items: [mockMeal1, mockMeal2, mockMeal3],
         totalKcal: 650,
       });

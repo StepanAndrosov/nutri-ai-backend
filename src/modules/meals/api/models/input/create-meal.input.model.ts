@@ -36,14 +36,6 @@ export class CreateMealInputModel {
   })
   time?: string;
 
-  @ApiPropertyOptional({
-    description: 'Meal name',
-    example: 'Овсянка с бананом',
-  })
-  @IsOptional()
-  @IsString()
-  name?: string;
-
   @ApiProperty({
     description: 'Meal items (products or recipes with quantities)',
     type: [CreateMealItemInputModel],

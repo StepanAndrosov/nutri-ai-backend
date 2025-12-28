@@ -72,7 +72,6 @@ export class DaysController {
     return this.mealsService.createMealForDate(user.userId, params.date, {
       type: body.type as MealType,
       time: body.time,
-      name: body.name,
       items: body.items,
       source: body.source as MealSource,
       aiConfidence: body.aiConfidence,

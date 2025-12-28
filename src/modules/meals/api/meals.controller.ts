@@ -14,7 +14,8 @@ import { MealsService } from '../application/meals.service';
 import { JwtAuthGuard } from '../../auth/api/guards/jwt-auth.guard';
 import { CurrentUser } from '../../auth/api/decorators/current-user.decorator';
 import { CurrentUserType } from '../../auth/api/types/request-with-user.type';
-import { UpdateMealInputModel } from './models/input/update-meal.input.model';
+import { AddProductToMealInputModel } from './models/input/add-product-to-meal.input.model';
+import { RemoveProductFromMealInputModel } from './models/input/remove-product-from-meal.input.model';
 import { MealOutputModel } from './models/output/meal.output.model';
 import { GetMealByIdParams } from './input-dto/get-meal-by-id-params.input-dto';
 
@@ -54,13 +55,13 @@ export class MealsController {
   }
 
   /**
-   * Update meal by ID
+   * Add or update product in meal
    */
-  @Put(':id')
-  @ApiOperation({ summary: 'Update meal by ID' })
+  @Put(':id/product')
+  @ApiOperation({ summary: 'Add or update product in meal' })
   @ApiResponse({
     status: 200,
-    description: 'Meal updated successfully',
+    description: 'Product added or updated successfully',
     type: MealOutputModel,
   })
   @ApiResponse({
@@ -69,26 +70,53 @@ export class MealsController {
   })
   @ApiResponse({
     status: 404,
-    description: 'Meal not found',
+    description: 'Meal or product not found',
   })
   @ApiResponse({
     status: 403,
     description: 'Forbidden - not your meal',
   })
-  async updateMeal(
+  async addOrUpdateProduct(
     @Param() params: GetMealByIdParams,
-    @Body() body: UpdateMealInputModel,
+    @Body() body: AddProductToMealInputModel,
     @CurrentUser() user: CurrentUserType,
   ): Promise<MealOutputModel> {
-    return this.mealsService.update(params.id, user.userId, {
-      type: body.type as any,
-      time: body.time,
-      name: body.name,
-      items: body.items as any,
-      totalKcal: body.totalKcal,
-      source: body.source as any,
-      aiConfidence: body.aiConfidence,
-    });
+    return this.mealsService.addOrUpdateProduct(
+      params.id,
+      user.userId,
+      body.productId,
+      body.quantity,
+    );
+  }
+
+  /**
+   * Remove product from meal
+   */
+  @Delete(':id/product')
+  @ApiOperation({ summary: 'Remove product from meal' })
+  @ApiResponse({
+    status: 200,
+    description: 'Product removed successfully',
+    type: MealOutputModel,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Meal or product not found in meal',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - not your meal',
+  })
+  async removeProduct(
+    @Param() params: GetMealByIdParams,
+    @Body() body: RemoveProductFromMealInputModel,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<MealOutputModel> {
+    return this.mealsService.removeProduct(params.id, user.userId, body.productId);
   }
 
   /**
