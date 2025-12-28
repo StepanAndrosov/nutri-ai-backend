@@ -63,6 +63,19 @@ export class MealsService {
     // Get or create day entry for this date
     const dayEntry = await this.daysService.getOrCreate(userId, date);
 
+    // Check if a meal with this type already exists for this day
+    const mealTypeExists = await this.mealsQueryRepository.checkMealTypeExistsForDayEntry(
+      dayEntry.id,
+      data.type,
+    );
+
+    if (mealTypeExists) {
+      throw new DomainException({
+        code: DomainExceptionCode.BadRequest,
+        message: `meal with type '${data.type}' already exists for this day`,
+      });
+    }
+
     // Process meal items and create FoodItems with calculated nutrition
     const foodItems: FoodItem[] = [];
 

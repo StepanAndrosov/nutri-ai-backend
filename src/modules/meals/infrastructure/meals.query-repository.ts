@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Meal, MealModelType } from '../domain/meal.entity';
+import { Meal, MealModelType, MealType } from '../domain/meal.entity';
 import { MealOutputModel, MealOutputModelMapper } from '../api/models/output/meal.output.model';
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
@@ -84,5 +84,16 @@ export class MealsQueryRepository {
     ]);
 
     return result.length > 0 ? result[0].total : 0;
+  }
+
+  /**
+   * Check if a meal with a specific type exists for a day entry
+   * @param dayEntryId - Day entry ID
+   * @param mealType - Meal type to check
+   * @returns True if a meal with the specified type exists, false otherwise
+   */
+  async checkMealTypeExistsForDayEntry(dayEntryId: string, mealType: MealType): Promise<boolean> {
+    const meal = await this.MealModel.findOne({ dayEntryId, type: mealType });
+    return meal !== null;
   }
 }

@@ -58,7 +58,7 @@ export class DaysController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid input data',
+    description: 'Invalid input data or meal with this type already exists for this day',
   })
   @ApiResponse({
     status: 401,
