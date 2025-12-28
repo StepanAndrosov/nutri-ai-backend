@@ -7,6 +7,8 @@ import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-c
 import { MealType, MealSource } from '../domain/meal.entity';
 import { FoodItem } from '../domain/food-item.subdocument';
 import { MealOutputModel } from '../api/models/output/meal.output.model';
+import { ProductsQueryRepository } from '../../products/infrastructure/products.query-repository';
+import { CreateMealItemInputModel } from '../api/models/input/create-meal-item.input.model';
 
 /**
  * Interface for creating a meal
@@ -15,8 +17,7 @@ export interface CreateMealData {
   type: MealType;
   time?: string;
   name?: string;
-  items: FoodItem[];
-  totalKcal: number;
+  items: CreateMealItemInputModel[];
   source: MealSource;
   aiConfidence?: number;
 }
@@ -44,11 +45,13 @@ export class MealsService {
     private readonly mealsQueryRepository: MealsQueryRepository,
     @Inject(forwardRef(() => DaysService))
     private readonly daysService: DaysService,
+    private readonly productsQueryRepository: ProductsQueryRepository,
   ) {}
 
   /**
    * Create a new meal for a specific date
    * Creates day entry if it doesn't exist
+   * Processes meal items (products/recipes) and calculates nutrition automatically
    * @param userId - User ID
    * @param date - Date in YYYY-MM-DD format
    * @param data - Meal creation data
@@ -62,14 +65,65 @@ export class MealsService {
     // Get or create day entry for this date
     const dayEntry = await this.daysService.getOrCreate(userId, date);
 
+    // Process meal items and create FoodItems with calculated nutrition
+    const foodItems: FoodItem[] = [];
+
+    for (const item of data.items) {
+      if (item.productId) {
+        // Get product details
+        const product = await this.productsQueryRepository.getByIdOrNotFoundFail(item.productId);
+
+        // Calculate nutrition values based on quantity
+        const kcal = Math.round((product.kcalPer100g * item.quantity) / 100);
+        const protein = product.proteinPer100g
+          ? Math.round(((product.proteinPer100g * item.quantity) / 100) * 10) / 10
+          : undefined;
+        const fat = product.fatPer100g
+          ? Math.round(((product.fatPer100g * item.quantity) / 100) * 10) / 10
+          : undefined;
+        const carbs = product.carbsPer100g
+          ? Math.round(((product.carbsPer100g * item.quantity) / 100) * 10) / 10
+          : undefined;
+
+        // Create FoodItem
+        const foodItem: FoodItem = {
+          productId: item.productId,
+          name: product.name,
+          quantity: item.quantity,
+          unit: 'g',
+          kcal,
+          protein,
+          fat,
+          carbs,
+          source: product.source,
+        };
+
+        foodItems.push(foodItem);
+      } else if (item.recipeId) {
+        // Recipe support will be implemented later
+        throw new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: 'Recipe support is not implemented yet',
+        });
+      } else {
+        throw new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: 'Either productId or recipeId must be provided',
+        });
+      }
+    }
+
+    // Calculate total calories
+    const totalKcal = foodItems.reduce((sum, item) => sum + item.kcal, 0);
+
     // Create meal
     const newMeal = {
       dayEntryId: dayEntry.id,
       type: data.type,
       time: data.time,
       name: data.name,
-      items: data.items,
-      totalKcal: data.totalKcal,
+      items: foodItems,
+      totalKcal,
       source: data.source,
       aiConfidence: data.aiConfidence,
       createdAt: new Date(),

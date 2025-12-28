@@ -6,6 +6,7 @@ import { MealsService } from './application/meals.service';
 import { MealsRepository } from './infrastructure/meals.repository';
 import { MealsQueryRepository } from './infrastructure/meals.query-repository';
 import { DaysModule } from '../days/days.module';
+import { ProductsModule } from '../products/products.module';
 
 /**
  * Meals module for managing meals
@@ -14,6 +15,7 @@ import { DaysModule } from '../days/days.module';
   imports: [
     MongooseModule.forFeature([{ name: Meal.name, schema: MealSchema }]),
     forwardRef(() => DaysModule),
+    ProductsModule,
   ],
   controllers: [MealsController],
   providers: [MealsService, MealsRepository, MealsQueryRepository],

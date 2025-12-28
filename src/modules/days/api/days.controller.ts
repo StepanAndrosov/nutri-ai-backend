@@ -10,7 +10,6 @@ import { GetDayByDateParams } from './models/input/get-day-by-date-params.input-
 import { CreateMealInputModel } from '../../meals/api/models/input/create-meal.input.model';
 import { MealOutputModel } from '../../meals/api/models/output/meal.output.model';
 import { MealSource, MealType } from '../../meals/domain/meal.entity';
-import { FoodItem } from '../../meals/domain/food-item.subdocument';
 
 /**
  * Controller for day entry management
@@ -74,8 +73,7 @@ export class DaysController {
       type: body.type as MealType,
       time: body.time,
       name: body.name,
-      items: body.items as FoodItem[],
-      totalKcal: body.totalKcal,
+      items: body.items,
       source: body.source as MealSource,
       aiConfidence: body.aiConfidence,
     });

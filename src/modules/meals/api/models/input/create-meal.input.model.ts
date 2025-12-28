@@ -12,7 +12,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { CreateFoodItemInputModel } from './create-food-item.input.model';
+import { CreateMealItemInputModel } from './create-meal-item.input.model';
 
 export class CreateMealInputModel {
   @ApiProperty({
@@ -45,22 +45,13 @@ export class CreateMealInputModel {
   name?: string;
 
   @ApiProperty({
-    description: 'Food items in this meal',
-    type: [CreateFoodItemInputModel],
+    description: 'Meal items (products or recipes with quantities)',
+    type: [CreateMealItemInputModel],
   })
   @IsArray()
   @ValidateNested({ each: true })
-  @Type(() => CreateFoodItemInputModel)
-  items: CreateFoodItemInputModel[];
-
-  @ApiProperty({
-    description: 'Total calories',
-    example: 450,
-  })
-  @IsNotEmpty()
-  @IsNumber()
-  @Min(0)
-  totalKcal: number;
+  @Type(() => CreateMealItemInputModel)
+  items: CreateMealItemInputModel[];
 
   @ApiProperty({
     description: 'Source of meal data',
