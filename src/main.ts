@@ -9,13 +9,7 @@ async function bootstrap() {
 
   appSetup(app);
   app.enableCors({
-    origin: 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-  app.enableCors({
-    origin: 'https://nutri-ai-gules.vercel.app',
+    origin: ['http://localhost:3000', 'https://nutri-ai-gules.vercel.app'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
