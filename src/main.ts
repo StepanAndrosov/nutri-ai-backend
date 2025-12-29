@@ -14,6 +14,12 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   });
+  app.enableCors({
+    origin: 'https://nutri-ai-gules.vercel.app',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  });
 
   const port = configService.get<number>('app.port') || 7840;
   const environment = configService.get<string>('app.environment') || 'DEVELOPMENT';
