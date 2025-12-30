@@ -16,6 +16,7 @@ import { CurrentUser } from '../../auth/api/decorators/current-user.decorator';
 import { CurrentUserType } from '../../auth/api/types/request-with-user.type';
 import { AddProductToMealInputModel } from './models/input/add-product-to-meal.input.model';
 import { RemoveProductFromMealInputModel } from './models/input/remove-product-from-meal.input.model';
+import { UpdateMealItemsInputModel } from './models/input/update-meal-items.input.model';
 import { MealOutputModel } from './models/output/meal.output.model';
 import { GetMealByIdParams } from './input-dto/get-meal-by-id-params.input-dto';
 
@@ -52,6 +53,36 @@ export class MealsController {
     @CurrentUser() user: CurrentUserType,
   ): Promise<MealOutputModel> {
     return this.mealsService.getById(params.id, user.userId);
+  }
+
+  /**
+   * Update meal items
+   */
+  @Put(':id')
+  @ApiOperation({ summary: 'Update meal items' })
+  @ApiResponse({
+    status: 200,
+    description: 'Meal items updated successfully',
+    type: MealOutputModel,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input data',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Meal not found or product not found in meal',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - not your meal',
+  })
+  async updateMealItems(
+    @Param() params: GetMealByIdParams,
+    @Body() body: UpdateMealItemsInputModel,
+    @CurrentUser() user: CurrentUserType,
+  ): Promise<MealOutputModel> {
+    return this.mealsService.updateMealItems(params.id, user.userId, body.items);
   }
 
   /**

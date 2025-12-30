@@ -273,23 +273,20 @@ export class MealsService {
   }
 
   /**
-   * Add or update product in meal
-   * If product already exists in items, update its quantity
-   * If product doesn't exist, add it to items
-   * Recalculates totalKcal automatically
+   * Update meal items array
+   * Replaces entire items array with new items based on productId and quantity
+   * Finds each product in existing meal items and recalculates nutrition based on new quantity
    * @param id - Meal ID
    * @param userId - User ID (for ownership check)
-   * @param productId - Product ID to add or update
-   * @param quantity - New quantity in grams
+   * @param items - Array of { productId, quantity } to update
    * @returns Updated meal output model
-   * @throws DomainException with NotFound code if meal or product doesn't exist
+   * @throws DomainException with NotFound code if meal doesn't exist or any product not found in meal
    * @throws DomainException with Forbidden code if user doesn't own the meal
    */
-  async addOrUpdateProduct(
+  async updateMealItems(
     id: string,
     userId: string,
-    productId: string,
-    quantity: number,
+    items: Array<{ productId: string; quantity: number }>,
   ): Promise<MealOutputModel> {
     // Check meal exists and get it
     const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
@@ -303,62 +300,53 @@ export class MealsService {
       });
     }
 
-    // Get product details
-    const product = await this.productsQueryRepository.getByIdOrNotFoundFail(productId);
+    // Build new items array by finding and updating each product
+    const updatedItems: FoodItem[] = [];
 
-    // Find existing item with this productId
-    const existingItemIndex = existingMeal.items.findIndex((item) => item.productId === productId);
+    for (const item of items) {
+      // Find existing item with this productId
+      const existingItem = existingMeal.items.find((i) => i.productId === item.productId);
 
-    let updatedItems: FoodItem[];
+      if (!existingItem) {
+        throw new DomainException({
+          code: DomainExceptionCode.NotFound,
+          message: `product with id '${item.productId}' not found in meal`,
+        });
+      }
 
-    if (existingItemIndex !== -1) {
-      // Product exists - update quantity and recalculate nutrition
-      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
-      const protein = product.proteinPer100g
-        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
+      // Calculate values per 100g from existing item data
+      const kcalPer100g = (existingItem.kcal / existingItem.quantity) * 100;
+      const proteinPer100g = existingItem.protein
+        ? (existingItem.protein / existingItem.quantity) * 100
         : undefined;
-      const fat = product.fatPer100g
-        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
+      const fatPer100g = existingItem.fat
+        ? (existingItem.fat / existingItem.quantity) * 100
         : undefined;
-      const carbs = product.carbsPer100g
-        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
+      const carbsPer100g = existingItem.carbs
+        ? (existingItem.carbs / existingItem.quantity) * 100
         : undefined;
 
-      updatedItems = [...existingMeal.items];
-      updatedItems[existingItemIndex] = {
-        ...updatedItems[existingItemIndex],
-        quantity,
+      // Recalculate nutrition values based on new quantity
+      const kcal = Math.round((kcalPer100g * item.quantity) / 100);
+      const protein = proteinPer100g
+        ? Math.round(((proteinPer100g * item.quantity) / 100) * 10) / 10
+        : undefined;
+      const fat = fatPer100g
+        ? Math.round(((fatPer100g * item.quantity) / 100) * 10) / 10
+        : undefined;
+      const carbs = carbsPer100g
+        ? Math.round(((carbsPer100g * item.quantity) / 100) * 10) / 10
+        : undefined;
+
+      // Create updated FoodItem
+      updatedItems.push({
+        ...existingItem,
+        quantity: item.quantity,
         kcal,
         protein,
         fat,
         carbs,
-      };
-    } else {
-      // Product doesn't exist - create new FoodItem and add to items
-      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
-      const protein = product.proteinPer100g
-        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const fat = product.fatPer100g
-        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const carbs = product.carbsPer100g
-        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-
-      const newFoodItem: FoodItem = {
-        productId,
-        name: product.name,
-        quantity,
-        unit: 'g',
-        kcal,
-        protein,
-        fat,
-        carbs,
-        source: product.source,
-      };
-
-      updatedItems = [...existingMeal.items, newFoodItem];
+      });
     }
 
     // Recalculate total calories
