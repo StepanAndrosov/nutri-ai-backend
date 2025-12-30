@@ -174,74 +174,18 @@ export class MealsService {
   }
 
   /**
-   * Update an existing meal
+   * Update product quantity in meal
+   * Finds existing product in meal items and updates its quantity
+   * Recalculates nutrition values based on new quantity
    * @param id - Meal ID
    * @param userId - User ID (for ownership check)
-   * @param data - Meal update data
-   * @returns Updated meal output model
-   * @throws DomainException with NotFound code if meal doesn't exist
-   * @throws DomainException with Forbidden code if user doesn't own the meal
-   */
-  async update(id: string, userId: string, data: UpdateMealData): Promise<MealOutputModel> {
-    // Check meal exists and get day entry ID
-    const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
-
-    // Check ownership through day entry
-    const isOwner = await this.daysService.checkOwnership(existingMeal.dayEntryId, userId);
-    if (!isOwner) {
-      throw new DomainException({
-        code: DomainExceptionCode.Forbidden,
-        message: 'You can only update your own meals',
-      });
-    }
-
-    // Update meal
-    const updateData: Partial<{
-      type: MealType;
-      time: string;
-      items: FoodItem[];
-      totalKcal: number;
-      source: MealSource;
-      aiConfidence: number;
-    }> = {};
-
-    if (data.type !== undefined) updateData.type = data.type;
-    if (data.time !== undefined) updateData.time = data.time;
-    if (data.items !== undefined) updateData.items = data.items;
-    if (data.totalKcal !== undefined) updateData.totalKcal = data.totalKcal;
-    if (data.source !== undefined) updateData.source = data.source;
-    if (data.aiConfidence !== undefined) updateData.aiConfidence = data.aiConfidence;
-
-    const updated = await this.mealsRepository.update(id, updateData);
-    if (!updated) {
-      throw new DomainException({
-        code: DomainExceptionCode.NotFound,
-        message: 'meal not found',
-      });
-    }
-
-    // Update day entry consumed calories
-    await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
-
-    // Return updated meal
-    const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
-    return updatedMeal;
-  }
-
-  /**
-   * Add or update product in meal
-   * If product already exists in items, update its quantity
-   * If product doesn't exist, add it to items
-   * Recalculates totalKcal automatically
-   * @param id - Meal ID
-   * @param userId - User ID (for ownership check)
-   * @param productId - Product ID to add or update
+   * @param productId - Product ID to update
    * @param quantity - New quantity in grams
    * @returns Updated meal output model
-   * @throws DomainException with NotFound code if meal or product doesn't exist
+   * @throws DomainException with NotFound code if meal doesn't exist or product not found in meal
    * @throws DomainException with Forbidden code if user doesn't own the meal
    */
-  async addOrUpdateProduct(
+  async updateProduct(
     id: string,
     userId: string,
     productId: string,
@@ -259,63 +203,50 @@ export class MealsService {
       });
     }
 
-    // Get product details
-    const product = await this.productsQueryRepository.getByIdOrNotFoundFail(productId);
-
     // Find existing item with this productId
     const existingItemIndex = existingMeal.items.findIndex((item) => item.productId === productId);
 
-    let updatedItems: FoodItem[];
-
-    if (existingItemIndex !== -1) {
-      // Product exists - update quantity and recalculate nutrition
-      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
-      const protein = product.proteinPer100g
-        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const fat = product.fatPer100g
-        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const carbs = product.carbsPer100g
-        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-
-      updatedItems = [...existingMeal.items];
-      updatedItems[existingItemIndex] = {
-        ...updatedItems[existingItemIndex],
-        quantity,
-        kcal,
-        protein,
-        fat,
-        carbs,
-      };
-    } else {
-      // Product doesn't exist - create new FoodItem and add to items
-      const kcal = Math.round((product.kcalPer100g * quantity) / 100);
-      const protein = product.proteinPer100g
-        ? Math.round(((product.proteinPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const fat = product.fatPer100g
-        ? Math.round(((product.fatPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-      const carbs = product.carbsPer100g
-        ? Math.round(((product.carbsPer100g * quantity) / 100) * 10) / 10
-        : undefined;
-
-      const newFoodItem: FoodItem = {
-        productId,
-        name: product.name,
-        quantity,
-        unit: 'g',
-        kcal,
-        protein,
-        fat,
-        carbs,
-        source: product.source,
-      };
-
-      updatedItems = [...existingMeal.items, newFoodItem];
+    if (existingItemIndex === -1) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'product not found in meal',
+      });
     }
+
+    const existingItem = existingMeal.items[existingItemIndex];
+
+    // Calculate values per 100g from existing item data
+    const kcalPer100g = (existingItem.kcal / existingItem.quantity) * 100;
+    const proteinPer100g = existingItem.protein
+      ? (existingItem.protein / existingItem.quantity) * 100
+      : undefined;
+    const fatPer100g = existingItem.fat
+      ? (existingItem.fat / existingItem.quantity) * 100
+      : undefined;
+    const carbsPer100g = existingItem.carbs
+      ? (existingItem.carbs / existingItem.quantity) * 100
+      : undefined;
+
+    // Recalculate nutrition values based on new quantity
+    const kcal = Math.round((kcalPer100g * quantity) / 100);
+    const protein = proteinPer100g
+      ? Math.round(((proteinPer100g * quantity) / 100) * 10) / 10
+      : undefined;
+    const fat = fatPer100g ? Math.round(((fatPer100g * quantity) / 100) * 10) / 10 : undefined;
+    const carbs = carbsPer100g
+      ? Math.round(((carbsPer100g * quantity) / 100) * 10) / 10
+      : undefined;
+
+    // Update item with new quantity and recalculated nutrition
+    const updatedItems = [...existingMeal.items];
+    updatedItems[existingItemIndex] = {
+      ...existingItem,
+      quantity,
+      kcal,
+      protein,
+      fat,
+      carbs,
+    };
 
     // Recalculate total calories
     const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
