@@ -55,6 +55,25 @@ class EnvironmentVariables {
   @IsOptional()
   @Min(0)
   FOOD_CACHE_TTL_SECONDS: number = 604800;
+
+  @IsString()
+  OPENAI_API_KEY: string;
+
+  @IsString()
+  @IsOptional()
+  OPENAI_MODEL: string = 'gpt-4.1-mini';
+
+  @IsNumber()
+  @IsOptional()
+  @Min(100)
+  @Max(4000)
+  OPENAI_MAX_TOKENS: number = 2000;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  @Max(1)
+  OPENAI_TEMPERATURE: number = 0.3;
 }
 
 export function validate(config: Record<string, unknown>) {

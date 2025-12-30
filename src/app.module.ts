@@ -10,12 +10,14 @@ import { FoodDatabaseModule } from './modules/food-database/food-database.module
 import { ProductsModule } from './modules/products/products.module';
 import { DaysModule } from './modules/days/days.module';
 import { MealsModule } from './modules/meals/meals.module';
+import { AiModule } from './modules/ai/ai.module';
 import {
   appConfig,
   databaseConfig,
   jwtConfig,
   googleConfig,
   foodApiConfig,
+  openaiConfig,
   validate,
 } from './config';
 
@@ -24,7 +26,7 @@ import {
     CoreModule,
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, databaseConfig, jwtConfig, googleConfig, foodApiConfig],
+      load: [appConfig, databaseConfig, jwtConfig, googleConfig, foodApiConfig, openaiConfig],
       validate,
       cache: true,
     }),
@@ -41,6 +43,7 @@ import {
     ProductsModule,
     DaysModule,
     MealsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [AppService],
