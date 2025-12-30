@@ -37,7 +37,7 @@ export class AiService {
     private readonly productsQueryRepository: ProductsQueryRepository,
     private readonly productsRepository: ProductsRepository,
     private readonly mealsService: MealsService,
-  ) { }
+  ) {}
 
   /**
    * Parse meal description and create meal with products

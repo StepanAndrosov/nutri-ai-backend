@@ -15,7 +15,7 @@ export class AiController {
   constructor(
     private readonly aiService: AiService,
     private readonly mealsQueryRepository: MealsQueryRepository,
-  ) { }
+  ) {}
 
   @Post('parse')
   @UseGuards(JwtAuthGuard)
