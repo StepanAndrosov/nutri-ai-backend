@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/unbound-method */
 import { Test, TestingModule } from '@nestjs/testing';
+import { HttpStatus } from '@nestjs/common';
+import { Response } from 'express';
 import { MealsController } from './meals.controller';
 import { MealsService } from '../application/meals.service';
 import { MealOutputModel } from './models/output/meal.output.model';
@@ -64,7 +66,7 @@ describe('MealsController', () => {
           provide: MealsService,
           useValue: {
             getById: jest.fn(),
-            addOrUpdateProduct: jest.fn(),
+            updateProduct: jest.fn(),
             removeProduct: jest.fn(),
             delete: jest.fn(),
           },
@@ -267,7 +269,7 @@ describe('MealsController', () => {
         totalKcal: 525,
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'updateProduct').mockResolvedValue(updatedMeal);
 
       // Act
       const result: MealOutputModel = await controller.addOrUpdateProduct(
@@ -283,8 +285,8 @@ describe('MealsController', () => {
       expect(result.items[0].productId).toBe(productData.productId);
       expect(result.items[0].quantity).toBe(productData.quantity);
       expect(result.totalKcal).toBe(525);
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledTimes(1);
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledTimes(1);
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -312,7 +314,7 @@ describe('MealsController', () => {
         totalKcal: 700,
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'updateProduct').mockResolvedValue(updatedMeal);
 
       // Act
       const result = await controller.addOrUpdateProduct(params, productData, user);
@@ -322,7 +324,7 @@ describe('MealsController', () => {
       expect(result.items[0].productId).toBe(existingProductId);
       expect(result.items[0].quantity).toBe(200);
       expect(result.totalKcal).toBe(700);
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -355,7 +357,7 @@ describe('MealsController', () => {
         totalKcal: 450, // 350 + 100
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'updateProduct').mockResolvedValue(updatedMeal);
 
       // Act
       const result = await controller.addOrUpdateProduct(params, productData, user);
@@ -363,7 +365,7 @@ describe('MealsController', () => {
       // Assert
       expect(result.items).toHaveLength(2);
       expect(result.totalKcal).toBe(450);
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -384,7 +386,7 @@ describe('MealsController', () => {
         message: 'meal not found',
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(notFoundException);
+      jest.spyOn(mealsService, 'updateProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
       await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
@@ -397,7 +399,7 @@ describe('MealsController', () => {
         code: DomainExceptionCode.NotFound,
       });
 
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -418,7 +420,7 @@ describe('MealsController', () => {
         message: 'product not found',
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(notFoundException);
+      jest.spyOn(mealsService, 'updateProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
       await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
@@ -445,7 +447,7 @@ describe('MealsController', () => {
         message: 'You can only update your own meals',
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockRejectedValue(forbiddenException);
+      jest.spyOn(mealsService, 'updateProduct').mockRejectedValue(forbiddenException);
 
       // Act & Assert
       await expect(controller.addOrUpdateProduct(params, productData, user)).rejects.toThrow(
@@ -458,7 +460,7 @@ describe('MealsController', () => {
         code: DomainExceptionCode.Forbidden,
       });
 
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -480,7 +482,7 @@ describe('MealsController', () => {
         totalKcal: 0,
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'updateProduct').mockResolvedValue(updatedMeal);
 
       // Act
       const result = await controller.addOrUpdateProduct(params, productData, user);
@@ -488,7 +490,7 @@ describe('MealsController', () => {
       // Assert
       expect(result.items).toEqual([]);
       expect(result.totalKcal).toBe(0);
-      expect(mealsService.addOrUpdateProduct).toHaveBeenCalledWith(
+      expect(mealsService.updateProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
         productData.productId,
@@ -515,7 +517,7 @@ describe('MealsController', () => {
         totalKcal: 875,
       });
 
-      jest.spyOn(mealsService, 'addOrUpdateProduct').mockResolvedValue(updatedMeal);
+      jest.spyOn(mealsService, 'updateProduct').mockResolvedValue(updatedMeal);
 
       // Act
       const result = await controller.addOrUpdateProduct(params, productData, user);
@@ -527,29 +529,80 @@ describe('MealsController', () => {
   });
 
   describe('removeProduct', () => {
-    it('should successfully remove product from meal', async () => {
+    let mockResponse: any;
+
+    beforeEach(() => {
+      mockResponse = {
+        status: jest.fn().mockReturnThis(),
+      } as any;
+    });
+
+    it('should successfully remove product from meal and return updated meal with 200 OK', async () => {
       // Arrange
       const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
       const user = createMockUser();
       const productData: RemoveProductFromMealInputModel = {
         productId: '507f1f77bcf86cd799439020',
       };
+      const remainingItem = createMockFoodItem({
+        id: '507f1f77bcf86cd799439016',
+        productId: '507f1f77bcf86cd799439021',
+        name: 'Банан',
+        kcal: 100,
+      });
       const updatedMeal = createMockMeal({
         id: params.id,
-        items: [],
-        totalKcal: 0,
+        items: [remainingItem],
+        totalKcal: 100,
       });
 
       jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result: MealOutputModel = await controller.removeProduct(params, productData, user);
+      const result = await controller.removeProduct(
+        params,
+        productData,
+        user,
+        mockResponse as Response,
+      );
 
       // Assert
       expect(result).toBeDefined();
       expect(result).toEqual(updatedMeal);
-      expect(result.items).toHaveLength(0);
-      expect(result.totalKcal).toBe(0);
+      expect((result as MealOutputModel).items).toHaveLength(1);
+      expect((result as MealOutputModel).totalKcal).toBe(100);
+      expect(mockResponse.status).not.toHaveBeenCalled();
+      expect(mealsService.removeProduct).toHaveBeenCalledTimes(1);
+      expect(mealsService.removeProduct).toHaveBeenCalledWith(
+        params.id,
+        user.userId,
+        productData.productId,
+      );
+    });
+
+    it('should remove last product and delete meal returning 204 No Content', async () => {
+      // Arrange
+      const params: GetMealByIdParams = { id: '507f1f77bcf86cd799439011' };
+      const user = createMockUser();
+      const productData: RemoveProductFromMealInputModel = {
+        productId: '507f1f77bcf86cd799439020',
+      };
+
+      // Service returns null when meal is deleted
+      jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(null);
+
+      // Act
+      const result = await controller.removeProduct(
+        params,
+        productData,
+        user,
+        mockResponse as Response,
+      );
+
+      // Assert
+      expect(result).toBeUndefined();
+      expect(mockResponse.status).toHaveBeenCalledTimes(1);
+      expect(mockResponse.status).toHaveBeenCalledWith(HttpStatus.NO_CONTENT);
       expect(mealsService.removeProduct).toHaveBeenCalledTimes(1);
       expect(mealsService.removeProduct).toHaveBeenCalledWith(
         params.id,
@@ -580,12 +633,13 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result = await controller.removeProduct(params, productData, user);
+      const result = await controller.removeProduct(params, productData, user, mockResponse);
 
       // Assert
-      expect(result.items).toHaveLength(1);
-      expect(result.items[0].productId).toBe('507f1f77bcf86cd799439021');
-      expect(result.totalKcal).toBe(100);
+      expect(result).toBeDefined();
+      expect((result as MealOutputModel).items).toHaveLength(1);
+      expect((result as MealOutputModel).items[0].productId).toBe('507f1f77bcf86cd799439021');
+      expect((result as MealOutputModel).totalKcal).toBe(100);
       expect(mealsService.removeProduct).toHaveBeenCalledWith(
         params.id,
         user.userId,
@@ -619,11 +673,12 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockResolvedValue(updatedMeal);
 
       // Act
-      const result = await controller.removeProduct(params, productData, user);
+      const result = await controller.removeProduct(params, productData, user, mockResponse);
 
       // Assert
-      expect(result.items).toHaveLength(2);
-      expect(result.totalKcal).toBe(350);
+      expect(result).toBeDefined();
+      expect((result as MealOutputModel).items).toHaveLength(2);
+      expect((result as MealOutputModel).totalKcal).toBe(350);
     });
 
     it('should throw DomainException with NotFound when meal does not exist', async () => {
@@ -641,13 +696,13 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         DomainException,
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         'meal not found',
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
         code: DomainExceptionCode.NotFound,
       });
 
@@ -673,13 +728,13 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         DomainException,
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         'product not found in meal',
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
         code: DomainExceptionCode.NotFound,
       });
     });
@@ -699,13 +754,13 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(forbiddenException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         DomainException,
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toThrow(
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
         'You can only update your own meals',
       );
-      await expect(controller.removeProduct(params, productData, user)).rejects.toMatchObject({
+      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
         code: DomainExceptionCode.Forbidden,
       });
 
