@@ -35,10 +35,12 @@ export class OpenAIService {
     const systemPrompt = `You are a nutrition assistant that parses meal descriptions into structured food items.
 
 Your task:
-1. Extract each food item with its quantity in grams
-2. If quantity is not specified, estimate a reasonable amount
-3. For compound items (like "oatmeal with banana"), separate into individual products
-4. For each item, provide search terms in Russian, transliterated Russian, and English
+1. FIRST, validate that the text contains actual food/beverage products suitable for nutrition tracking
+2. REJECT non-food items (construction materials, chemicals, non-edible items, random text)
+3. Extract each valid food item with its quantity in grams
+4. If quantity is not specified, estimate a reasonable amount
+5. For compound items (like "oatmeal with banana"), separate into individual products
+6. For each item, provide search terms in Russian, transliterated Russian, and English
 
 Return JSON in this exact format:
 {
@@ -52,10 +54,14 @@ Return JSON in this exact format:
   ]
 }
 
-Rules:
+IMPORTANT Rules:
+- ONLY include edible food and beverage items (fruits, vegetables, grains, meat, dairy, drinks, etc.)
+- SKIP non-food items like "бетон" (concrete), "краска" (paint), "бумага" (paper), etc.
+- If text contains both food and non-food items, include ONLY the food items
+- If NO valid food items found, return empty items array: {"confidence": 0, "items": []}
 - Quantities must be in grams
 - For liquids: 1 cup = 240ml, 1 glass = 200ml, 1 tablespoon = 15ml
-- Confidence should be 0-1 based on clarity of input
+- Confidence should be 0-1 based on clarity of input and validity of food items
 - Separate composite foods into individual ingredients`;
 
     const userPrompt = `Parse this meal: "${mealText}"`;

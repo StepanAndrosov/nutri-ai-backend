@@ -377,14 +377,19 @@ export class MealsService {
    * Remove product from meal
    * Finds and removes the product from items array
    * Recalculates totalKcal automatically
+   * If no items remain after removal, deletes the entire meal
    * @param id - Meal ID
    * @param userId - User ID (for ownership check)
    * @param productId - Product ID to remove
-   * @returns Updated meal output model
+   * @returns Updated meal output model, or null if meal was deleted
    * @throws DomainException with NotFound code if meal doesn't exist or product not found in meal
    * @throws DomainException with Forbidden code if user doesn't own the meal
    */
-  async removeProduct(id: string, userId: string, productId: string): Promise<MealOutputModel> {
+  async removeProduct(
+    id: string,
+    userId: string,
+    productId: string,
+  ): Promise<MealOutputModel | null> {
     // Check meal exists and get it
     const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
 
@@ -409,6 +414,22 @@ export class MealsService {
 
     // Remove product from items array
     const updatedItems = existingMeal.items.filter((item) => item.productId !== productId);
+
+    // If no items remain, delete the entire meal
+    if (updatedItems.length === 0) {
+      const deleted = await this.mealsRepository.delete(id);
+      if (!deleted) {
+        throw new DomainException({
+          code: DomainExceptionCode.NotFound,
+          message: 'meal not found',
+        });
+      }
+
+      // Update day entry consumed calories
+      await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+
+      return null;
+    }
 
     // Recalculate total calories
     const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);

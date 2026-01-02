@@ -8,7 +8,9 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { MealsService } from '../application/meals.service';
 import { JwtAuthGuard } from '../../auth/api/guards/jwt-auth.guard';
@@ -117,6 +119,7 @@ export class MealsController {
 
   /**
    * Remove product from meal
+   * If the meal has no items left after removal, the entire meal is deleted and returns 204
    */
   @Delete(':id/product')
   @ApiOperation({ summary: 'Remove product from meal' })
@@ -124,6 +127,10 @@ export class MealsController {
     status: 200,
     description: 'Product removed successfully',
     type: MealOutputModel,
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Product removed and meal deleted (no items remaining)',
   })
   @ApiResponse({
     status: 400,
@@ -141,8 +148,18 @@ export class MealsController {
     @Param() params: GetMealByIdParams,
     @Body() body: RemoveProductFromMealInputModel,
     @CurrentUser() user: CurrentUserType,
-  ): Promise<MealOutputModel> {
-    return this.mealsService.removeProduct(params.id, user.userId, body.productId);
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<MealOutputModel | void> {
+    const result = await this.mealsService.removeProduct(params.id, user.userId, body.productId);
+
+    // If meal was deleted (no items remaining), return 204 No Content
+    if (result === null) {
+      res.status(HttpStatus.NO_CONTENT);
+      return;
+    }
+
+    // Otherwise return updated meal with 200 OK
+    return result;
   }
 
   /**
