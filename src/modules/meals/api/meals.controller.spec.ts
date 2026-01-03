@@ -696,13 +696,15 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        'meal not found',
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow(DomainException);
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow('meal not found');
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toMatchObject({
         code: DomainExceptionCode.NotFound,
       });
 
@@ -728,13 +730,15 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(notFoundException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        'product not found in meal',
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow(DomainException);
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow('product not found in meal');
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toMatchObject({
         code: DomainExceptionCode.NotFound,
       });
     });
@@ -754,13 +758,15 @@ describe('MealsController', () => {
       jest.spyOn(mealsService, 'removeProduct').mockRejectedValue(forbiddenException);
 
       // Act & Assert
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        DomainException,
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toThrow(
-        'You can only update your own meals',
-      );
-      await expect(controller.removeProduct(params, productData, user, mockResponse)).rejects.toMatchObject({
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow(DomainException);
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toThrow('You can only update your own meals');
+      await expect(
+        controller.removeProduct(params, productData, user, mockResponse),
+      ).rejects.toMatchObject({
         code: DomainExceptionCode.Forbidden,
       });
 

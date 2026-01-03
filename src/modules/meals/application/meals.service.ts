@@ -273,6 +273,152 @@ export class MealsService {
   }
 
   /**
+   * Merge/upsert meal items
+   * For each item: if product exists in meal - update quantity, if not - add as new item
+   * Existing products not in the new items array are kept unchanged
+   * @param id - Meal ID
+   * @param userId - User ID (for ownership check)
+   * @param items - Array of items to merge (productId or recipeId with quantity)
+   * @returns Updated meal output model
+   * @throws DomainException with NotFound code if meal doesn't exist or product not found
+   * @throws DomainException with Forbidden code if user doesn't own the meal
+   */
+  async mergeOrAddMealItems(
+    id: string,
+    userId: string,
+    items: CreateMealItemInputModel[],
+  ): Promise<MealOutputModel> {
+    // Check meal exists and get it
+    const existingMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+
+    // Check ownership through day entry
+    const isOwner = await this.daysService.checkOwnership(existingMeal.dayEntryId, userId);
+    if (!isOwner) {
+      throw new DomainException({
+        code: DomainExceptionCode.Forbidden,
+        message: 'You can only update your own meals',
+      });
+    }
+
+    // Create a map of existing items by productId for quick lookup
+    const existingItemsMap = new Map<string, FoodItem>();
+    existingMeal.items.forEach((item) => {
+      if (item.productId) {
+        existingItemsMap.set(item.productId, item);
+      }
+    });
+
+    // Process new items - update existing or add new
+    for (const item of items) {
+      if (item.productId) {
+        const existingItem = existingItemsMap.get(item.productId);
+
+        if (existingItem) {
+          // Update existing item quantity
+          // Calculate values per 100g from existing item data
+          const kcalPer100g = (existingItem.kcal / existingItem.quantity) * 100;
+          const proteinPer100g = existingItem.protein
+            ? (existingItem.protein / existingItem.quantity) * 100
+            : undefined;
+          const fatPer100g = existingItem.fat
+            ? (existingItem.fat / existingItem.quantity) * 100
+            : undefined;
+          const carbsPer100g = existingItem.carbs
+            ? (existingItem.carbs / existingItem.quantity) * 100
+            : undefined;
+
+          // Recalculate nutrition values based on new quantity
+          const kcal = Math.round((kcalPer100g * item.quantity) / 100);
+          const protein = proteinPer100g
+            ? Math.round(((proteinPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+          const fat = fatPer100g
+            ? Math.round(((fatPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+          const carbs = carbsPer100g
+            ? Math.round(((carbsPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+
+          // Update in map
+          existingItemsMap.set(item.productId, {
+            ...existingItem,
+            quantity: item.quantity,
+            kcal,
+            protein,
+            fat,
+            carbs,
+          });
+        } else {
+          // Add new item - fetch product and calculate nutrition
+          const product = await this.productsQueryRepository.getByIdOrNotFoundFail(item.productId);
+
+          const kcal = Math.round((product.kcalPer100g * item.quantity) / 100);
+          const protein = product.proteinPer100g
+            ? Math.round(((product.proteinPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+          const fat = product.fatPer100g
+            ? Math.round(((product.fatPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+          const carbs = product.carbsPer100g
+            ? Math.round(((product.carbsPer100g * item.quantity) / 100) * 10) / 10
+            : undefined;
+
+          const foodItem: FoodItem = {
+            productId: item.productId,
+            name: product.name,
+            quantity: item.quantity,
+            unit: 'g',
+            kcal,
+            protein,
+            fat,
+            carbs,
+            source: product.source,
+          };
+
+          existingItemsMap.set(item.productId, foodItem);
+        }
+      } else if (item.recipeId) {
+        // Recipe support will be implemented later
+        throw new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: 'Recipe support is not implemented yet',
+        });
+      } else {
+        throw new DomainException({
+          code: DomainExceptionCode.BadRequest,
+          message: 'Either productId or recipeId must be provided',
+        });
+      }
+    }
+
+    // Convert map back to array
+    const updatedItems = Array.from(existingItemsMap.values());
+
+    // Recalculate total calories
+    const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+
+    // Update meal in database
+    const updated = await this.mealsRepository.update(id, {
+      items: updatedItems,
+      totalKcal,
+    });
+
+    if (!updated) {
+      throw new DomainException({
+        code: DomainExceptionCode.NotFound,
+        message: 'meal not found',
+      });
+    }
+
+    // Update day entry consumed calories
+    await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+
+    // Return updated meal
+    const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
+    return updatedMeal;
+  }
+
+  /**
    * Update meal items array
    * Replaces entire items array with new items based on productId and quantity
    * Finds each product in existing meal items and recalculates nutrition based on new quantity

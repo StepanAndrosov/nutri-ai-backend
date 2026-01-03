@@ -122,6 +122,81 @@ export class AiService {
   }
 
   /**
+   * Parse meal description and update existing meal with products
+   * Merges new products with existing ones: updates quantities if product exists, adds new if not
+   * Existing products not mentioned in the text remain unchanged
+   * @param userId - User ID for ownership check
+   * @param mealId - Meal ID to update
+   * @param text - Natural language meal description
+   * @returns Updated meal with product details
+   */
+  async updateMealWithParsedText(
+    userId: string,
+    mealId: string,
+    text: string,
+  ): Promise<ParseMealResult> {
+    this.logger.log(`Parsing and updating meal ${mealId} for user ${userId}: "${text}"`);
+
+    // Step 1: Parse meal description with GPT
+    const parseResult = await this.openAIService.parseMealDescription(text);
+
+    // Step 2: Process each parsed item - find or create products
+    const processedProducts: ParsedProductResult[] = [];
+    let productsCreated = 0;
+    let productsFound = 0;
+
+    for (const item of parseResult.items) {
+      try {
+        const result = await this.findOrCreateProduct(item, userId);
+        processedProducts.push(result);
+
+        if (result.wasCreated) {
+          productsCreated++;
+        } else {
+          productsFound++;
+        }
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorStack = error instanceof Error ? error.stack : undefined;
+        this.logger.error(`Failed to process item "${item.name}": ${errorMessage}`, errorStack);
+        // Continue processing other items even if one fails
+      }
+    }
+
+    if (processedProducts.length === 0) {
+      throw new DomainException({
+        code: DomainExceptionCode.BadRequest,
+        message: 'Failed to process any products from meal description',
+      });
+    }
+
+    // Step 3: Merge/update meal with new products
+    const itemsToMerge = processedProducts.map((p) => ({
+      productId: p.productId,
+      quantity: p.quantity,
+    }));
+
+    const updatedMeal = await this.mealsService.mergeOrAddMealItems(userId, mealId, itemsToMerge);
+
+    // Step 4: Increment usage counts for all products
+    await Promise.all(
+      processedProducts.map((p) => this.productsRepository.incrementUsageCount(p.productId)),
+    );
+
+    this.logger.log(
+      `Updated meal ${updatedMeal.id} with ${processedProducts.length} products (${productsCreated} created, ${productsFound} found)`,
+    );
+
+    return {
+      mealId: updatedMeal.id,
+      products: processedProducts,
+      confidence: parseResult.confidence,
+      productsCreatedCount: productsCreated,
+      productsFoundCount: productsFound,
+    };
+  }
+
+  /**
    * Find existing product or create new one with AI-generated nutrition
    * @param item - Parsed meal item from GPT
    * @param userId - User ID for product creation
