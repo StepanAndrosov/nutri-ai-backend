@@ -176,7 +176,7 @@ export class AiService {
       quantity: p.quantity,
     }));
 
-    const updatedMeal = await this.mealsService.mergeOrAddMealItems(userId, mealId, itemsToMerge);
+    const updatedMeal = await this.mealsService.mergeOrAddMealItems(mealId, userId, itemsToMerge);
 
     // Step 4: Increment usage counts for all products
     await Promise.all(
