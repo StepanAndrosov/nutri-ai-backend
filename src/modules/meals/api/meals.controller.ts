@@ -84,7 +84,7 @@ export class MealsController {
     @Body() body: UpdateMealItemsInputModel,
     @CurrentUser() user: CurrentUserType,
   ): Promise<MealOutputModel> {
-    return this.mealsService.updateMealItems(params.id, user.userId, body.items);
+    return this.mealsService.mergeOrAddMealItems(params.id, user.userId, body.items);
   }
 
   /**
