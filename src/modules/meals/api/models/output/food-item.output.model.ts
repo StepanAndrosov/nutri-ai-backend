@@ -62,6 +62,12 @@ export class FoodItemOutputModel {
   carbs?: number;
 
   @ApiPropertyOptional({
+    description: 'Fiber in grams',
+    example: 4.5,
+  })
+  fiber?: number;
+
+  @ApiPropertyOptional({
     description: 'Source of the item (product, recipe, ai)',
     example: 'product',
   })

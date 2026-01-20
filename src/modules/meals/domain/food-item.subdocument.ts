@@ -33,6 +33,9 @@ export class FoodItem {
   @Prop({ type: Number, required: false, min: 0 })
   carbs?: number;
 
+  @Prop({ type: Number, required: false, min: 0 })
+  fiber?: number;
+
   @Prop({ type: String, required: false })
   source?: string;
 }
