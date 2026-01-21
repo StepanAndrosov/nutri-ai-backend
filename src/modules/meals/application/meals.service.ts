@@ -88,16 +88,16 @@ export class MealsService {
         const kcal = Math.round((product.kcalPer100g * item.quantity) / 100);
         const protein = product.proteinPer100g
           ? Math.round(((product.proteinPer100g * item.quantity) / 100) * 10) / 10
-          : undefined;
+          : 0;
         const fat = product.fatPer100g
           ? Math.round(((product.fatPer100g * item.quantity) / 100) * 10) / 10
-          : undefined;
+          : 0;
         const carbs = product.carbsPer100g
           ? Math.round(((product.carbsPer100g * item.quantity) / 100) * 10) / 10
-          : undefined;
+          : 0;
         const fiber = product.fiberPer100g
           ? Math.round(((product.fiberPer100g * item.quantity) / 100) * 10) / 10
-          : undefined;
+          : 0;
 
         // Create FoodItem
         const foodItem: FoodItem = {
@@ -227,29 +227,21 @@ export class MealsService {
     const kcalPer100g = (existingItem.kcal / existingItem.quantity) * 100;
     const proteinPer100g = existingItem.protein
       ? (existingItem.protein / existingItem.quantity) * 100
-      : undefined;
-    const fatPer100g = existingItem.fat
-      ? (existingItem.fat / existingItem.quantity) * 100
-      : undefined;
+      : 0;
+    const fatPer100g = existingItem.fat ? (existingItem.fat / existingItem.quantity) * 100 : 0;
     const carbsPer100g = existingItem.carbs
       ? (existingItem.carbs / existingItem.quantity) * 100
-      : undefined;
+      : 0;
     const fiberPer100g = existingItem.fiber
       ? (existingItem.fiber / existingItem.quantity) * 100
-      : undefined;
+      : 0;
 
     // Recalculate nutrition values based on new quantity
     const kcal = Math.round((kcalPer100g * quantity) / 100);
-    const protein = proteinPer100g
-      ? Math.round(((proteinPer100g * quantity) / 100) * 10) / 10
-      : undefined;
-    const fat = fatPer100g ? Math.round(((fatPer100g * quantity) / 100) * 10) / 10 : undefined;
-    const carbs = carbsPer100g
-      ? Math.round(((carbsPer100g * quantity) / 100) * 10) / 10
-      : undefined;
-    const fiber = fiberPer100g
-      ? Math.round(((fiberPer100g * quantity) / 100) * 10) / 10
-      : undefined;
+    const protein = proteinPer100g ? Math.round(((proteinPer100g * quantity) / 100) * 10) / 10 : 0;
+    const fat = fatPer100g ? Math.round(((fatPer100g * quantity) / 100) * 10) / 10 : 0;
+    const carbs = carbsPer100g ? Math.round(((carbsPer100g * quantity) / 100) * 10) / 10 : 0;
+    const fiber = fiberPer100g ? Math.round(((fiberPer100g * quantity) / 100) * 10) / 10 : 0;
 
     // Update item with new quantity and recalculated nutrition
     const updatedItems = [...existingMeal.items];
@@ -338,31 +330,29 @@ export class MealsService {
           const kcalPer100g = (existingItem.kcal / existingItem.quantity) * 100;
           const proteinPer100g = existingItem.protein
             ? (existingItem.protein / existingItem.quantity) * 100
-            : undefined;
+            : 0;
           const fatPer100g = existingItem.fat
             ? (existingItem.fat / existingItem.quantity) * 100
-            : undefined;
+            : 0;
           const carbsPer100g = existingItem.carbs
             ? (existingItem.carbs / existingItem.quantity) * 100
-            : undefined;
+            : 0;
           const fiberPer100g = existingItem.fiber
             ? (existingItem.fiber / existingItem.quantity) * 100
-            : undefined;
+            : 0;
 
           // Recalculate nutrition values based on new quantity
           const kcal = Math.round((kcalPer100g * item.quantity) / 100);
           const protein = proteinPer100g
             ? Math.round(((proteinPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
-          const fat = fatPer100g
-            ? Math.round(((fatPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
+          const fat = fatPer100g ? Math.round(((fatPer100g * item.quantity) / 100) * 10) / 10 : 0;
           const carbs = carbsPer100g
             ? Math.round(((carbsPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
           const fiber = fiberPer100g
             ? Math.round(((fiberPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
 
           // Update in map
           existingItemsMap.set(item.productId, {
@@ -381,16 +371,16 @@ export class MealsService {
           const kcal = Math.round((product.kcalPer100g * item.quantity) / 100);
           const protein = product.proteinPer100g
             ? Math.round(((product.proteinPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
           const fat = product.fatPer100g
             ? Math.round(((product.fatPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
           const carbs = product.carbsPer100g
             ? Math.round(((product.carbsPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
           const fiber = product.fiberPer100g
             ? Math.round(((product.fiberPer100g * item.quantity) / 100) * 10) / 10
-            : undefined;
+            : 0;
 
           const foodItem: FoodItem = {
             productId: item.productId,
