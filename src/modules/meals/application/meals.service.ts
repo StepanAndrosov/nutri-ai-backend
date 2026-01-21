@@ -128,8 +128,10 @@ export class MealsService {
       }
     }
 
-    // Calculate total calories
+    // Calculate total calories and fiber
     const totalKcal = foodItems.reduce((sum, item) => sum + item.kcal, 0);
+    const totalFiber =
+      Math.round(foodItems.reduce((sum, item) => sum + (item.fiber || 0), 0) * 10) / 10;
 
     // Create meal
     const newMeal = {
@@ -138,6 +140,7 @@ export class MealsService {
       time: data.time,
       items: foodItems,
       totalKcal,
+      totalFiber,
       source: data.source,
       aiConfidence: data.aiConfidence,
       createdAt: new Date(),
@@ -146,8 +149,9 @@ export class MealsService {
 
     const mealId = await this.mealsRepository.create(newMeal);
 
-    // Update day entry consumed calories
+    // Update day entry consumed calories and fiber
     await this.updateDayEntryConsumedKcal(dayEntry.id);
+    await this.updateDayEntryConsumedFiber(dayEntry.id);
 
     // Return created meal
     const createdMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(mealId);
@@ -259,13 +263,16 @@ export class MealsService {
       fiber,
     };
 
-    // Recalculate total calories
+    // Recalculate total calories and fiber
     const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+    const totalFiber =
+      Math.round(updatedItems.reduce((sum, item) => sum + (item.fiber || 0), 0) * 10) / 10;
 
     // Update meal in database
     const updated = await this.mealsRepository.update(id, {
       items: updatedItems,
       totalKcal,
+      totalFiber,
     });
 
     if (!updated) {
@@ -275,8 +282,9 @@ export class MealsService {
       });
     }
 
-    // Update day entry consumed calories
+    // Update day entry consumed calories and fiber
     await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+    await this.updateDayEntryConsumedFiber(existingMeal.dayEntryId);
 
     // Return updated meal
     const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
@@ -416,13 +424,16 @@ export class MealsService {
     // Convert map back to array
     const updatedItems = Array.from(existingItemsMap.values());
 
-    // Recalculate total calories
+    // Recalculate total calories and fiber
     const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+    const totalFiber =
+      Math.round(updatedItems.reduce((sum, item) => sum + (item.fiber || 0), 0) * 10) / 10;
 
     // Update meal in database
     const updated = await this.mealsRepository.update(id, {
       items: updatedItems,
       totalKcal,
+      totalFiber,
     });
 
     if (!updated) {
@@ -432,8 +443,9 @@ export class MealsService {
       });
     }
 
-    // Update day entry consumed calories
+    // Update day entry consumed calories and fiber
     await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+    await this.updateDayEntryConsumedFiber(existingMeal.dayEntryId);
 
     // Return updated meal
     const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
@@ -492,19 +504,23 @@ export class MealsService {
         });
       }
 
-      // Update day entry consumed calories
+      // Update day entry consumed calories and fiber
       await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+      await this.updateDayEntryConsumedFiber(existingMeal.dayEntryId);
 
       return null;
     }
 
-    // Recalculate total calories
+    // Recalculate total calories and fiber
     const totalKcal = updatedItems.reduce((sum, item) => sum + item.kcal, 0);
+    const totalFiber =
+      Math.round(updatedItems.reduce((sum, item) => sum + (item.fiber || 0), 0) * 10) / 10;
 
     // Update meal in database
     const updated = await this.mealsRepository.update(id, {
       items: updatedItems,
       totalKcal,
+      totalFiber,
     });
 
     if (!updated) {
@@ -514,8 +530,9 @@ export class MealsService {
       });
     }
 
-    // Update day entry consumed calories
+    // Update day entry consumed calories and fiber
     await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+    await this.updateDayEntryConsumedFiber(existingMeal.dayEntryId);
 
     // Return updated meal
     const updatedMeal = await this.mealsQueryRepository.getByIdOrNotFoundFail(id);
@@ -551,8 +568,9 @@ export class MealsService {
       });
     }
 
-    // Update day entry consumed calories
+    // Update day entry consumed calories and fiber
     await this.updateDayEntryConsumedKcal(existingMeal.dayEntryId);
+    await this.updateDayEntryConsumedFiber(existingMeal.dayEntryId);
   }
 
   /**
@@ -562,5 +580,14 @@ export class MealsService {
   private async updateDayEntryConsumedKcal(dayEntryId: string): Promise<void> {
     const totalKcal = await this.mealsQueryRepository.calculateTotalKcalForDayEntry(dayEntryId);
     await this.daysService.updateConsumedKcal(dayEntryId, totalKcal);
+  }
+
+  /**
+   * Update day entry consumed fiber by recalculating from all meals
+   * @param dayEntryId - Day entry ID
+   */
+  private async updateDayEntryConsumedFiber(dayEntryId: string): Promise<void> {
+    const totalFiber = await this.mealsQueryRepository.calculateTotalFiberForDayEntry(dayEntryId);
+    await this.daysService.updateConsumedFiber(dayEntryId, totalFiber);
   }
 }

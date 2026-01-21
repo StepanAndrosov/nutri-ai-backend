@@ -87,6 +87,31 @@ export class MealsQueryRepository {
   }
 
   /**
+   * Calculate total fiber for a day entry
+   * @param dayEntryId - Day entry ID
+   * @returns Total fiber consumed in the day (in grams)
+   */
+  async calculateTotalFiberForDayEntry(dayEntryId: string): Promise<number> {
+    const result = await this.MealModel.aggregate<{ _id: null; total: number }>([
+      {
+        $match: {
+          dayEntryId,
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: {
+            $sum: { $ifNull: ['$totalFiber', 0] },
+          },
+        },
+      },
+    ]);
+
+    return result.length > 0 ? Math.round(result[0].total * 10) / 10 : 0;
+  }
+
+  /**
    * Check if a meal with a specific type exists for a day entry
    * @param dayEntryId - Day entry ID
    * @param mealType - Meal type to check

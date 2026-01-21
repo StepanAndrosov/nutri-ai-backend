@@ -44,6 +44,7 @@ export class DaysService {
       userId,
       date,
       consumedKcal: 0,
+      consumedFiber: 0,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -80,6 +81,15 @@ export class DaysService {
    */
   async updateConsumedKcal(dayEntryId: string, totalKcal: number): Promise<void> {
     await this.dayEntryRepository.updateConsumedKcal(dayEntryId, totalKcal);
+  }
+
+  /**
+   * Update consumed fiber for a day entry
+   * @param dayEntryId - Day entry ID
+   * @param totalFiber - New total fiber (in grams)
+   */
+  async updateConsumedFiber(dayEntryId: string, totalFiber: number): Promise<void> {
+    await this.dayEntryRepository.updateConsumedFiber(dayEntryId, totalFiber);
   }
 
   /**

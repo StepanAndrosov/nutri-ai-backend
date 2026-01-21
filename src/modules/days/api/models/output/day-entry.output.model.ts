@@ -34,6 +34,12 @@ export class DayEntryOutputModel {
   consumedKcal: number;
 
   @ApiPropertyOptional({
+    description: 'Total consumed fiber in grams',
+    example: 25.5,
+  })
+  consumedFiber?: number;
+
+  @ApiPropertyOptional({
     description: 'Notes for the day',
     example: 'Felt energetic throughout the day',
   })
@@ -71,6 +77,7 @@ export const DayEntryOutputModelMapper = (dayEntry: DayEntryDocument): DayEntryO
   output.date = dayEntry.date;
   output.targetKcal = dayEntry.targetKcal;
   output.consumedKcal = dayEntry.consumedKcal;
+  output.consumedFiber = dayEntry.consumedFiber;
   output.notes = dayEntry.notes;
   output.createdAt = dayEntry.createdAt;
   output.updatedAt = dayEntry.updatedAt;

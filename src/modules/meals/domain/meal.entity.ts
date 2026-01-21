@@ -41,6 +41,9 @@ export class Meal {
   @Prop({ type: Number, required: true, min: 0 })
   totalKcal: number;
 
+  @Prop({ type: Number, required: false, min: 0 })
+  totalFiber?: number;
+
   @Prop({ type: String, enum: Object.values(MealSource), required: true })
   source: MealSource;
 

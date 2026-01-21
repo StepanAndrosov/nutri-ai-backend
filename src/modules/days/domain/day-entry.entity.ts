@@ -19,6 +19,9 @@ export class DayEntry {
   @Prop({ type: Number, required: true, default: 0, min: 0 })
   consumedKcal: number;
 
+  @Prop({ type: Number, required: false, default: 0, min: 0 })
+  consumedFiber?: number;
+
   @Prop({ type: String, required: false })
   notes?: string;
 

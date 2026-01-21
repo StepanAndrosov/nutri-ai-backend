@@ -40,6 +40,12 @@ export class MealOutputModel {
   })
   totalKcal: number;
 
+  @ApiPropertyOptional({
+    description: 'Total fiber in grams',
+    example: 8.5,
+  })
+  totalFiber?: number;
+
   @ApiProperty({
     description: 'Source of meal data',
     enum: ['manual', 'ai'],
@@ -90,10 +96,12 @@ export const MealOutputModelMapper = (meal: MealDocument): MealOutputModel => {
     foodItemOutput.protein = item.protein;
     foodItemOutput.fat = item.fat;
     foodItemOutput.carbs = item.carbs;
+    foodItemOutput.fiber = item.fiber;
     foodItemOutput.source = item.source;
     return foodItemOutput;
   });
   output.totalKcal = meal.totalKcal;
+  output.totalFiber = meal.totalFiber;
   output.source = meal.source;
   output.aiConfidence = meal.aiConfidence;
   output.createdAt = meal.createdAt;

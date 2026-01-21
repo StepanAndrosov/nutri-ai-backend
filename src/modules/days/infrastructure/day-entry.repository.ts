@@ -58,6 +58,25 @@ export class DayEntryRepository {
   }
 
   /**
+   * Update consumed fiber for a day entry
+   * @param id - Day entry ID
+   * @param consumedFiber - New consumed fiber value (in grams)
+   * @returns True if day entry was updated, false otherwise
+   */
+  async updateConsumedFiber(id: string, consumedFiber: number): Promise<boolean> {
+    const result = await this.DayEntryModel.updateOne(
+      { _id: id },
+      {
+        $set: {
+          consumedFiber,
+          updatedAt: new Date(),
+        },
+      },
+    );
+    return result.modifiedCount === 1;
+  }
+
+  /**
    * Delete a day entry
    * @param id - Day entry ID
    * @returns True if day entry was deleted, false otherwise
