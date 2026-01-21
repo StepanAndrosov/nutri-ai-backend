@@ -33,36 +33,49 @@ export class OpenAIService {
    */
   async parseMealDescription(mealText: string): Promise<GptMealParseResponse> {
     const systemPrompt = `You are a nutrition assistant that parses meal descriptions into structured food items.
+You understand input in ANY language (Russian, English, Spanish, etc.) and can process multilingual meal descriptions.
 
 Your task:
 1. FIRST, validate that the text contains actual food/beverage products suitable for nutrition tracking
 2. REJECT non-food items (construction materials, chemicals, non-edible items, random text)
 3. Extract each valid food item with its quantity in grams
 4. If quantity is not specified, estimate a reasonable amount
-5. For compound items (like "oatmeal with banana"), separate into individual products
-6. For each item, provide search terms in Russian, transliterated Russian, and English
+5. For each item, provide search terms in the original language, transliterated form, and English translation
+
+CRITICAL - COOKING METHOD RULES:
+- PRESERVE cooking methods in product names (boiled, fried, baked, steamed, grilled, raw, etc.)
+- "baked chicken breast" should stay as ONE item, NOT split into just "chicken breast"
+- "oatmeal with milk" is DIFFERENT from "oatmeal with water" - these are separate products with different nutrition
+- "fried potatoes" should be "Fried potatoes", not just "potatoes"
+- DO NOT strip cooking methods - they significantly affect nutrition values
+
+WHEN TO SEPARATE vs KEEP TOGETHER:
+- SEPARATE: "oatmeal with banana" → ["Oatmeal", "Banana"] (banana is an addition/topping)
+- KEEP TOGETHER: "oatmeal cooked in milk" → ["Oatmeal cooked in milk"] (milk is part of cooking process)
+- SEPARATE: "chicken with rice" → ["Chicken", "Rice"] (two distinct foods served together)
+- KEEP TOGETHER: "baked chicken breast" → ["Baked chicken breast"] (cooking method is integral)
+- KEEP TOGETHER: "scrambled eggs" → ["Scrambled eggs"] (cooking method changes nutrition)
 
 Return JSON in this exact format:
 {
   "confidence": 0.85,
   "items": [
     {
-      "name": "Овсянка",
-      "quantity": 50,
-      "searchTerms": ["овсянка", "ovsyanka", "oatmeal", "овсяные хлопья"]
+      "name": "Baked chicken breast",
+      "quantity": 150,
+      "searchTerms": ["baked chicken breast", "chicken breast baked", "grilled chicken"]
     }
   ]
 }
 
 IMPORTANT Rules:
-- ONLY include edible food and beverage items (fruits, vegetables, grains, meat, dairy, drinks, etc.)
-- SKIP non-food items like "бетон" (concrete), "краска" (paint), "бумага" (paper), etc.
-- If text contains both food and non-food items, include ONLY the food items
-- If NO valid food items found, return empty items array: {"confidence": 0, "items": []}
+- ONLY include edible food and beverage items
+- SKIP non-food items (concrete, paint, paper, chemicals, etc.)
+- If NO valid food items found, return: {"confidence": 0, "items": []}
 - Quantities must be in grams
 - For liquids: 1 cup = 240ml, 1 glass = 200ml, 1 tablespoon = 15ml
-- Confidence should be 0-1 based on clarity of input and validity of food items
-- Separate composite foods into individual ingredients`;
+- Confidence should be 0-1 based on clarity of input
+- Return product names in the SAME language as the input (preserve user's language)`;
 
     const userPrompt = `Parse this meal: "${mealText}"`;
 
@@ -121,23 +134,39 @@ IMPORTANT Rules:
    */
   async generateProductNutrition(productName: string): Promise<GptProductNutrition> {
     const systemPrompt = `You are a nutrition database that provides accurate nutritional information per 100g.
+You understand food names in ANY language and can provide accurate nutrition data regardless of input language.
 
 Your task:
 1. Provide nutritional values per 100 grams for the given food
-2. Use standard nutrition databases as reference (USDA, Russian food composition tables)
-3. All values should be per 100g
+2. Use standard nutrition databases as reference (USDA, international food composition tables)
+3. All values should be per 100g of the PREPARED/COOKED form if cooking method is specified
 4. Return confidence score based on how common/well-known the food is
+
+CRITICAL - COOKING METHOD AFFECTS NUTRITION:
+- If product name includes cooking method, return values for THAT prepared form, NOT raw
+- Baked chicken breast (~165 kcal) ≠ Raw chicken breast (~110 kcal)
+- Oatmeal cooked in milk (~100 kcal) ≠ Dry oats (~343 kcal)
+- Fried potatoes (~190 kcal) ≠ Raw potatoes (~77 kcal)
+- Boiled rice (~130 kcal) ≠ Dry rice (~350 kcal)
+
+Cooking method impact on nutrition per 100g:
+- Boiled: water absorbed, ~2-3x weight increase, significantly lower kcal per 100g
+- Fried: oil absorbed, higher kcal and fat per 100g
+- Baked/Roasted: water loss, slightly concentrated nutrients
+- Steamed: similar to boiled, minimal fat added
+- Grilled: fat rendered out, moderate calorie density
+- Cooked in milk: includes milk calories in the final dish
 
 Return JSON in this exact format:
 {
-  "name": "Овсянка",
-  "kcalPer100g": 343,
-  "proteinPer100g": 12.6,
-  "fatPer100g": 6.9,
-  "carbsPer100g": 59.5,
-  "fiberPer100g": 10.1,
-  "sugarPer100g": 1.0,
-  "category": "Зерновые",
+  "name": "Baked chicken breast",
+  "kcalPer100g": 165,
+  "proteinPer100g": 31,
+  "fatPer100g": 3.6,
+  "carbsPer100g": 0,
+  "fiberPer100g": 0,
+  "sugarPer100g": 0,
+  "category": "Meat",
   "confidence": 0.95
 }
 
@@ -145,7 +174,7 @@ Rules:
 - All numeric values must be per 100 grams
 - Omit fields only if truly unknown (use 0 if zero)
 - Confidence 0.9-1.0 for common foods, 0.5-0.8 for less common, below 0.5 for very uncertain
-- Category should be in Russian if product name is Russian, English otherwise`;
+- Return the name and category in the SAME language as the input`;
 
     const userPrompt = `Provide nutrition data for: "${productName}"`;
 
