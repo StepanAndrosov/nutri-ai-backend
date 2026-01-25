@@ -45,6 +45,12 @@ export class UserOutputModel {
   })
   dailyKcalGoal?: number;
 
+  @ApiPropertyOptional({
+    description: 'Daily token limit for AI features (override system default)',
+    example: 50000,
+  })
+  dailyTokenLimit?: number;
+
   @ApiProperty({
     description: 'Account creation timestamp',
     example: '2025-12-12T10:30:00.000Z',
@@ -62,6 +68,7 @@ export const UserOutputModelMapper = (user: UserDocument): UserOutputModel => {
   outputModel.displayName = user.displayName;
   outputModel.timezone = user.timezone;
   outputModel.dailyKcalGoal = user.dailyKcalGoal;
+  outputModel.dailyTokenLimit = user.dailyTokenLimit;
   outputModel.authProvider = user.authProvider;
   outputModel.googleId = user.googleId;
   outputModel.createdAt = user.createdAt.toISOString();

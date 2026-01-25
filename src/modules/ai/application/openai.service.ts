@@ -6,6 +6,17 @@ import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-c
 import { GptMealParseResponse } from '../domain/types/gpt-meal-parse-response.type';
 import { GptProductNutrition } from '../domain/types/gpt-product-nutrition.type';
 
+export interface OpenAITokenUsage {
+  promptTokens: number;
+  completionTokens: number;
+  totalTokens: number;
+}
+
+export interface OpenAIResponse<T> {
+  data: T;
+  usage: OpenAITokenUsage;
+}
+
 @Injectable()
 export class OpenAIService {
   private readonly logger = new Logger(OpenAIService.name);
@@ -29,9 +40,9 @@ export class OpenAIService {
   /**
    * Parse meal description into structured food items
    * @param mealText - Natural language meal description
-   * @returns Parsed meal items with quantities and search terms
+   * @returns Parsed meal items with quantities and search terms, plus token usage
    */
-  async parseMealDescription(mealText: string): Promise<GptMealParseResponse> {
+  async parseMealDescription(mealText: string): Promise<OpenAIResponse<GptMealParseResponse>> {
     const systemPrompt = `You are a nutrition assistant that parses meal descriptions into structured food items.
 You understand input in ANY language (Russian, English, Spanish, etc.) and can process multilingual meal descriptions.
 
@@ -109,8 +120,16 @@ IMPORTANT Rules:
         });
       }
 
-      this.logger.log(`Parsed meal: ${mealText} -> ${parsed.items.length} items`);
-      return parsed;
+      const usage: OpenAITokenUsage = {
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+        totalTokens: completion.usage?.total_tokens ?? 0,
+      };
+
+      this.logger.log(
+        `Parsed meal: ${mealText} -> ${parsed.items.length} items (${usage.totalTokens} tokens)`,
+      );
+      return { data: parsed, usage };
     } catch (error) {
       if (error instanceof DomainException) {
         throw error;
@@ -130,9 +149,11 @@ IMPORTANT Rules:
   /**
    * Generate nutrition data for a product using AI
    * @param productName - Product name
-   * @returns Estimated nutrition data
+   * @returns Estimated nutrition data, plus token usage
    */
-  async generateProductNutrition(productName: string): Promise<GptProductNutrition> {
+  async generateProductNutrition(
+    productName: string,
+  ): Promise<OpenAIResponse<GptProductNutrition>> {
     const systemPrompt = `You are a nutrition database that provides accurate nutritional information per 100g.
 You understand food names in ANY language and can provide accurate nutrition data regardless of input language.
 
@@ -208,8 +229,14 @@ Rules:
         });
       }
 
-      this.logger.log(`Generated nutrition for: ${productName}`);
-      return parsed;
+      const usage: OpenAITokenUsage = {
+        promptTokens: completion.usage?.prompt_tokens ?? 0,
+        completionTokens: completion.usage?.completion_tokens ?? 0,
+        totalTokens: completion.usage?.total_tokens ?? 0,
+      };
+
+      this.logger.log(`Generated nutrition for: ${productName} (${usage.totalTokens} tokens)`);
+      return { data: parsed, usage };
     } catch (error) {
       if (error instanceof DomainException) {
         throw error;

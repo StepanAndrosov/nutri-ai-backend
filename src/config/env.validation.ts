@@ -74,6 +74,11 @@ class EnvironmentVariables {
   @Min(0)
   @Max(1)
   OPENAI_TEMPERATURE: number = 0.3;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  OPENAI_DAILY_TOKEN_LIMIT: number = 50000;
 }
 
 export function validate(config: Record<string, unknown>) {

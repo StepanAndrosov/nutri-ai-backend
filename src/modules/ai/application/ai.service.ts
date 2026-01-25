@@ -10,6 +10,7 @@ import { normalizeProductName } from '../../../common/utils/transliteration.util
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 import { ParsedMealItem } from '../domain/types/gpt-meal-parse-response.type';
+import { TokenUsageService } from '../../token-usage/application/token-usage.service';
 
 export interface ParsedProductResult {
   productId: string;
@@ -37,6 +38,7 @@ export class AiService {
     private readonly productsQueryRepository: ProductsQueryRepository,
     private readonly productsRepository: ProductsRepository,
     private readonly mealsService: MealsService,
+    private readonly tokenUsageService: TokenUsageService,
   ) {}
 
   /**
@@ -55,8 +57,13 @@ export class AiService {
   ): Promise<ParseMealResult> {
     this.logger.log(`Parsing meal for user ${userId}: "${text}"`);
 
+    // Check token limit before making API calls
+    await this.tokenUsageService.checkLimitAndThrow(userId);
+
     // Step 1: Parse meal description with GPT
-    const parseResult = await this.openAIService.parseMealDescription(text);
+    const parseResponse = await this.openAIService.parseMealDescription(text);
+    await this.tokenUsageService.recordUsage(userId, parseResponse.usage);
+    const parseResult = parseResponse.data;
 
     // Step 2: Process each parsed item - find or create products
     const processedProducts: ParsedProductResult[] = [];
@@ -137,8 +144,13 @@ export class AiService {
   ): Promise<ParseMealResult> {
     this.logger.log(`Parsing and updating meal ${mealId} for user ${userId}: "${text}"`);
 
+    // Check token limit before making API calls
+    await this.tokenUsageService.checkLimitAndThrow(userId);
+
     // Step 1: Parse meal description with GPT
-    const parseResult = await this.openAIService.parseMealDescription(text);
+    const parseResponse = await this.openAIService.parseMealDescription(text);
+    await this.tokenUsageService.recordUsage(userId, parseResponse.usage);
+    const parseResult = parseResponse.data;
 
     // Step 2: Process each parsed item - find or create products
     const processedProducts: ParsedProductResult[] = [];
@@ -234,7 +246,9 @@ export class AiService {
     // No match found - create new product with AI-generated nutrition
     this.logger.log(`No match found for "${item.name}", generating with AI`);
 
-    const nutritionData = await this.openAIService.generateProductNutrition(item.name);
+    const nutritionResponse = await this.openAIService.generateProductNutrition(item.name);
+    await this.tokenUsageService.recordUsage(userId, nutritionResponse.usage);
+    const nutritionData = nutritionResponse.data;
 
     const productId = await this.productsService.create(
       {

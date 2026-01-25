@@ -11,6 +11,7 @@ import { ProductsModule } from './modules/products/products.module';
 import { DaysModule } from './modules/days/days.module';
 import { MealsModule } from './modules/meals/meals.module';
 import { AiModule } from './modules/ai/ai.module';
+import { TokenUsageModule } from './modules/token-usage/token-usage.module';
 import {
   appConfig,
   databaseConfig,
@@ -44,6 +45,7 @@ import {
     DaysModule,
     MealsModule,
     AiModule,
+    TokenUsageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

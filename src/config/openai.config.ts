@@ -5,4 +5,5 @@ export default registerAs('openai', () => ({
   model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
   maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '2000', 10),
   temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
+  dailyTokenLimit: parseInt(process.env.OPENAI_DAILY_TOKEN_LIMIT || '50000', 10),
 }));

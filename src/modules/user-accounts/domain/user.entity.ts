@@ -24,6 +24,9 @@ export class User {
   @Prop({ type: String, required: false, unique: true, sparse: true })
   googleId?: string;
 
+  @Prop({ type: Number, required: false, min: 0 })
+  dailyTokenLimit?: number; // Override system default for OpenAI token limit
+
   @Prop({ type: Date, default: () => new Date() })
   createdAt: Date;
 }
