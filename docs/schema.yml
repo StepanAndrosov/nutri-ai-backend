@@ -13,6 +13,8 @@ servers:
 tags:
   - name: Auth
     description: Аутентификация и авторизация
+  - name: Goals
+    description: Цели по калориям и БЖУ
   - name: Calendar
     description: Календарь приёмов пищи
   - name: Day
@@ -62,6 +64,24 @@ components:
         dailyKcalGoal:
           type: integer
           minimum: 0
+        proteinPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          default: 30
+          description: 'Процент белков от суточной нормы калорий'
+        fatPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          default: 30
+          description: 'Процент жиров от суточной нормы калорий'
+        carbsPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          default: 40
+          description: 'Процент углеводов от суточной нормы калорий'
         createdAt:
           type: string
           format: date-time
@@ -90,6 +110,10 @@ components:
           minimum: 0
         consumedKcal:
           type: integer
+          minimum: 0
+        consumedFiber:
+          type: number
+          format: float
           minimum: 0
         notes:
           type: string
@@ -136,6 +160,10 @@ components:
             $ref: '#/components/schemas/FoodItem'
         totalKcal:
           type: integer
+          minimum: 0
+        totalFiber:
+          type: number
+          format: float
           minimum: 0
         source:
           type: string
@@ -198,6 +226,9 @@ components:
           type: number
           format: float
         carbs:
+          type: number
+          format: float
+        fiber:
           type: number
           format: float
         source:
@@ -556,7 +587,7 @@ components:
       type: object
       required:
         - type
-        - totalKcal
+        - items
         - source
       properties:
         type:
@@ -565,51 +596,93 @@ components:
         time:
           type: string
           pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+          example: '14:30'
         name:
           type: string
+          example: 'Овсянка с бананом'
         items:
           type: array
           items:
             type: object
             required:
-              - name
               - quantity
-              - unit
-              - kcal
             properties:
               productId:
                 type: string
                 format: uuid
+                nullable: true
               recipeId:
                 type: string
                 format: uuid
-              name:
-                type: string
+                nullable: true
               quantity:
                 type: number
                 format: float
-              unit:
-                type: string
-              kcal:
-                type: integer
-              protein:
-                type: number
-                format: float
-              fat:
-                type: number
-                format: float
-              carbs:
-                type: number
-                format: float
-        totalKcal:
-          type: integer
-          minimum: 0
+                example: 100
         source:
           type: string
           enum: [manual, ai]
+          default: manual
         aiConfidence:
           type: number
           format: float
+          minimum: 0
+          maximum: 1
+          example: 0.95
+          nullable: true
+
+    AddProductToMealRequest:
+      type: object
+      required:
+        - productId
+        - quantity
+      properties:
+        productId:
+          type: string
+          format: uuid
+          example: '507f1f77bcf86cd799439011'
+        quantity:
+          type: number
+          format: float
+          example: 150
+          description: 'Количество продукта в граммах'
+
+    RemoveProductFromMealRequest:
+      type: object
+      required:
+        - productId
+      properties:
+        productId:
+          type: string
+          format: uuid
+          example: '507f1f77bcf86cd799439011'
+
+    UpdateMealItemsRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            required:
+              - quantity
+            properties:
+              productId:
+                type: string
+                format: uuid
+                nullable: true
+                example: '507f1f77bcf86cd799439011'
+              recipeId:
+                type: string
+                format: uuid
+                nullable: true
+              quantity:
+                type: number
+                format: float
+                example: 150
+                description: 'Для продукта - граммы, для рецепта - количество порций'
 
     CreateProductRequest:
       type: object
@@ -776,99 +849,70 @@ components:
           type: string
           pattern: '^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
 
-    AiParseMealRequest:
+    AiParseRequest:
+      type: object
+      required:
+        - text
+        - mealType
+        - date
+      properties:
+        text:
+          type: string
+          example: 'овсянка 50 г с бананом и мёдом, кофе с молоком'
+        mealType:
+          type: string
+          enum: [breakfast, lunch, dinner, snack, other]
+          example: breakfast
+        date:
+          type: string
+          format: date
+          example: '2025-12-30'
+
+    AiMealUpdateRequest:
       type: object
       required:
         - text
       properties:
         text:
           type: string
-          example: 'завтрак: овсянка 50 г с бананом и мёдом, кофе с молоком'
+          example: 'рис 100 г, куриная грудка 150 г'
 
-    AiParseMealResponse:
+    AiParseResponse:
       type: object
       properties:
-        parsed:
-          type: object
-          properties:
-            type:
-              type: string
-              enum: [breakfast, lunch, dinner, snack, other]
-            items:
-              type: array
-              items:
-                type: object
-                properties:
-                  rawText:
-                    type: string
-                  parsedName:
-                    type: string
-                  quantity:
-                    type: number
-                    format: float
-                  unit:
-                    type: string
-                  productSuggestions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        productId:
-                          type: string
-                          format: uuid
-                        name:
-                          type: string
-                        kcalPer100g:
-                          type: integer
-                        source:
-                          type: string
-                        matchScore:
-                          type: number
-                          format: float
-                  recipeSuggestions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        recipeId:
-                          type: string
-                          format: uuid
-                        name:
-                          type: string
-                        kcalPerServing:
-                          type: integer
-                        servings:
-                          type: integer
-                        usageCount:
-                          type: integer
-                        matchScore:
-                          type: number
-                          format: float
-                  aiFallback:
-                    type: object
-                    nullable: true
-                    properties:
-                      name:
-                        type: string
-                      kcalPer100g:
-                        type: integer
-                      proteinPer100g:
-                        type: number
-                        format: float
-                      fatPer100g:
-                        type: number
-                        format: float
-                      carbsPer100g:
-                        type: number
-                        format: float
-                      confidence:
-                        type: number
-                        format: float
-        needsReview:
+        meal:
+          $ref: '#/components/schemas/Meal'
+        products:
           type: array
           items:
-            type: string
-          description: 'Список items с низким confidence'
+            type: object
+            properties:
+              productId:
+                type: string
+                format: uuid
+              name:
+                type: string
+              quantity:
+                type: number
+                format: float
+              wasCreated:
+                type: boolean
+                description: 'Был ли продукт создан AI или найден в базе'
+              source:
+                type: string
+                enum: [ai, database]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+          description: 'Общая уверенность AI в парсинге'
+        productsCreatedCount:
+          type: integer
+          description: 'Количество созданных продуктов'
+        productsFoundCount:
+          type: integer
+          description: 'Количество найденных продуктов в базе'
 
     StatsResponse:
       type: object
@@ -901,6 +945,74 @@ components:
             carbs:
               type: number
               format: float
+
+    NutritionGoals:
+      type: object
+      required:
+        - dailyKcalGoal
+        - proteinPct
+        - fatPct
+        - carbsPct
+      properties:
+        dailyKcalGoal:
+          type: integer
+          minimum: 1000
+          maximum: 10000
+          example: 2000
+        proteinPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 30
+        fatPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 30
+        carbsPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 40
+        # Рассчитанные значения в граммах (только в ответе)
+        proteinGrams:
+          type: integer
+          description: 'Рассчитанное количество белков в граммах'
+        fatGrams:
+          type: integer
+          description: 'Рассчитанное количество жиров в граммах'
+        carbsGrams:
+          type: integer
+          description: 'Рассчитанное количество углеводов в граммах'
+
+    UpdateNutritionGoalsRequest:
+      type: object
+      required:
+        - dailyKcalGoal
+        - proteinPct
+        - fatPct
+        - carbsPct
+      properties:
+        dailyKcalGoal:
+          type: integer
+          minimum: 1000
+          maximum: 10000
+          example: 2000
+        proteinPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 30
+        fatPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 30
+        carbsPct:
+          type: integer
+          minimum: 5
+          maximum: 80
+          example: 40
 
     Error:
       type: object
@@ -1012,6 +1124,74 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /auth/me:
+    get:
+      tags:
+        - Auth
+      summary: Получить информацию о текущем пользователе
+      description: Проверка валидности токена и получение данных текущего пользователя
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Данные пользователя успешно получены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Невалидный или истекший токен
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # ========================================
+  # GOALS
+  # ========================================
+  /user/goals:
+    get:
+      tags:
+        - Goals
+      summary: Получить цели по питанию
+      description: Возвращает текущие цели пользователя по калориям и БЖУ
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Цели пользователя
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NutritionGoals'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+    put:
+      tags:
+        - Goals
+      summary: Обновить цели по питанию
+      description: Обновляет цели пользователя по калориям и процентному соотношению БЖУ. Сумма proteinPct + fatPct + carbsPct должна равняться 100.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNutritionGoalsRequest'
+      responses:
+        '200':
+          description: Цели успешно обновлены
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NutritionGoals'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   # ========================================
   # CALENDAR
   # ========================================
@@ -1114,10 +1294,10 @@ paths:
   # MEALS
   # ========================================
   /meals/{id}:
-    put:
+    get:
       tags:
         - Meals
-      summary: Обновить приём пищи
+      summary: Получить приём пищи
       security:
         - bearerAuth: []
       parameters:
@@ -1127,15 +1307,42 @@ paths:
           schema:
             type: string
             format: uuid
+      responses:
+        '200':
+          description: Данные приёма пищи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meal'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      tags:
+        - Meals
+      summary: Обновить элементы приёма пищи
+      description: Обновляет список продуктов в приёме пищи. Полностью заменяет существующие элементы новым списком.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Meal ID
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/CreateMealRequest'
+              $ref: '#/components/schemas/UpdateMealItemsRequest'
       responses:
         '200':
-          description: Приём обновлён
+          description: Элементы приёма пищи обновлены
           content:
             application/json:
               schema:
@@ -1168,14 +1375,84 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /meals/{id}/product:
+    put:
+      tags:
+        - Meals
+      summary: Добавить или обновить продукт в приёме пищи
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Meal ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProductToMealRequest'
+      responses:
+        '200':
+          description: Продукт добавлен/обновлён
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      tags:
+        - Meals
+      summary: Удалить продукт из приёма пищи
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Meal ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RemoveProductFromMealRequest'
+      responses:
+        '200':
+          description: Продукт удалён из приёма пищи
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Meal'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   # ========================================
   # AI
   # ========================================
-  /ai/parse-meal:
+  /ai/parse:
     post:
       tags:
         - AI
-      summary: Распарсить текст через AI
+      summary: Распарсить текст приёма пищи с указанием типа и даты
+      description: Парсит текстовое описание еды с учетом типа приёма пищи и даты, создает meal и возвращает его
       security:
         - bearerAuth: []
       requestBody:
@@ -1183,14 +1460,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/AiParseMealRequest'
+              $ref: '#/components/schemas/AiParseRequest'
       responses:
-        '200':
-          description: Результат парсинга
+        '201':
+          description: Meal успешно распарсен и создан
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AiParseMealResponse'
+                $ref: '#/components/schemas/AiParseResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1201,6 +1478,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
+  /ai/meals/{id}:
+    put:
+      tags:
+        - AI
+      summary: Update meal with AI-parsed description
+      description: Parses meal description with GPT-4, finds or creates products, and merges them into existing meal. Existing products are updated if mentioned, new products are added. Products not mentioned remain unchanged.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: Meal ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiMealUpdateRequest'
+      responses:
+        '200':
+          description: Meal successfully updated with parsed products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiParseResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # ========================================
   # PRODUCTS

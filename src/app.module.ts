@@ -12,6 +12,7 @@ import { DaysModule } from './modules/days/days.module';
 import { MealsModule } from './modules/meals/meals.module';
 import { AiModule } from './modules/ai/ai.module';
 import { TokenUsageModule } from './modules/token-usage/token-usage.module';
+import { NutritionGoalsModule } from './modules/nutrition-goals/nutrition-goals.module';
 import {
   appConfig,
   databaseConfig,
@@ -46,6 +47,7 @@ import {
     MealsModule,
     AiModule,
     TokenUsageModule,
+    NutritionGoalsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
