@@ -41,8 +41,4 @@ UserSchema.loadClass(User);
 // Types
 export type UserDocument = HydratedDocument<User>;
 
-// type UserModelStaticType = {
-//   createUser: (name: string, email: string | null) => UserDocument;
-// };
-
-export type UserModelType = Model<UserDocument>; //& UserModelStaticType;
+export type UserModelType = Model<UserDocument>;
