@@ -6,4 +6,9 @@ export default registerAs('openai', () => ({
   maxTokens: parseInt(process.env.OPENAI_MAX_TOKENS || '2000', 10),
   temperature: parseFloat(process.env.OPENAI_TEMPERATURE || '0.3'),
   dailyTokenLimit: parseInt(process.env.OPENAI_DAILY_TOKEN_LIMIT || '50000', 10),
+  freeTierDailyTokenLimit: parseInt(process.env.OPENAI_FREE_TIER_DAILY_TOKEN_LIMIT || '10000', 10),
+  subscriberDailyTokenLimit: parseInt(
+    process.env.OPENAI_SUBSCRIBER_DAILY_TOKEN_LIMIT || '200000',
+    10,
+  ),
 }));

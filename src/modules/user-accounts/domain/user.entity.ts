@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Model } from 'mongoose';
+import { UserRole } from '../../auth/domain/user-role.enum';
 
 @Schema()
 export class User {
@@ -26,6 +27,9 @@ export class User {
 
   @Prop({ type: Number, required: false, min: 0 })
   dailyTokenLimit?: number; // Override system default for OpenAI token limit
+
+  @Prop({ type: String, enum: Object.values(UserRole), default: UserRole.USER })
+  role: string;
 
   @Prop({ type: Date, default: () => new Date() })
   createdAt: Date;

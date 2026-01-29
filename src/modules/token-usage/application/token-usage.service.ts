@@ -6,6 +6,8 @@ import {
 } from '../infrastructure/token-usage.repository';
 import { TokenUsageQueryRepository } from '../infrastructure/token-usage.query-repository';
 import { UsersQueryRepository } from '../../user-accounts/infrastructure/users.query-repository';
+import { SubscriptionsService } from '../../subscriptions/application/subscriptions.service';
+import { SubscriptionStatus } from '../../subscriptions/domain/subscription-status.enum';
 import { CurrentTokenUsageOutputModel } from '../api/models/output/token-usage.output.model';
 import { DomainException, Extension } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
@@ -14,14 +16,21 @@ import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-c
 export class TokenUsageService {
   private readonly logger = new Logger(TokenUsageService.name);
   private readonly defaultDailyLimit: number;
+  private readonly freeTierDailyLimit: number;
+  private readonly subscriberDailyLimit: number;
 
   constructor(
     private readonly tokenUsageRepository: TokenUsageRepository,
     private readonly tokenUsageQueryRepository: TokenUsageQueryRepository,
     private readonly usersQueryRepository: UsersQueryRepository,
+    private readonly subscriptionsService: SubscriptionsService,
     private readonly configService: ConfigService,
   ) {
     this.defaultDailyLimit = this.configService.get<number>('openai.dailyTokenLimit') || 50000;
+    this.freeTierDailyLimit =
+      this.configService.get<number>('openai.freeTierDailyTokenLimit') || 10000;
+    this.subscriberDailyLimit =
+      this.configService.get<number>('openai.subscriberDailyTokenLimit') || 200000;
   }
 
   /**
@@ -105,10 +114,20 @@ export class TokenUsageService {
    */
   async getDailyLimit(userId: string): Promise<number> {
     const user = await this.usersQueryRepository.getById(userId);
+
+    // 1. User-specific override (highest priority, e.g. set by admin)
     if (user?.dailyTokenLimit !== undefined && user.dailyTokenLimit !== null) {
       return user.dailyTokenLimit;
     }
-    return this.defaultDailyLimit;
+
+    // 2. Subscription-based limit
+    const subscription = await this.subscriptionsService.getByUserId(userId);
+    if (subscription?.status === SubscriptionStatus.ACTIVE) {
+      return this.subscriberDailyLimit;
+    }
+
+    // 3. Free tier limit
+    return this.freeTierDailyLimit;
   }
 
   /**

@@ -6,6 +6,7 @@ import { TokenUsageService } from './application/token-usage.service';
 import { TokenUsageRepository } from './infrastructure/token-usage.repository';
 import { TokenUsageQueryRepository } from './infrastructure/token-usage.query-repository';
 import { UserAccountsModule } from '../user-accounts/user-accounts.module';
+import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
 
 /**
  * Token usage module for tracking OpenAI API token consumption
@@ -14,6 +15,7 @@ import { UserAccountsModule } from '../user-accounts/user-accounts.module';
   imports: [
     MongooseModule.forFeature([{ name: TokenUsage.name, schema: TokenUsageSchema }]),
     UserAccountsModule,
+    SubscriptionsModule,
   ],
   controllers: [TokenUsageController],
   providers: [TokenUsageService, TokenUsageRepository, TokenUsageQueryRepository],

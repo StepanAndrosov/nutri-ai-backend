@@ -52,6 +52,13 @@ export class UserOutputModel {
   dailyTokenLimit?: number;
 
   @ApiProperty({
+    description: 'User role',
+    example: 'user',
+    enum: ['user', 'admin'],
+  })
+  role: string;
+
+  @ApiProperty({
     description: 'Account creation timestamp',
     example: '2025-12-12T10:30:00.000Z',
   })
@@ -71,6 +78,7 @@ export const UserOutputModelMapper = (user: UserDocument): UserOutputModel => {
   outputModel.dailyTokenLimit = user.dailyTokenLimit;
   outputModel.authProvider = user.authProvider;
   outputModel.googleId = user.googleId;
+  outputModel.role = user.role;
   outputModel.createdAt = user.createdAt.toISOString();
 
   return outputModel;

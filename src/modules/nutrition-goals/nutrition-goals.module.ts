@@ -12,6 +12,11 @@ import { NutritionGoalsQueryRepository } from './infrastructure/nutrition-goals.
   ],
   controllers: [NutritionGoalsController],
   providers: [NutritionGoalsService, NutritionGoalsRepository, NutritionGoalsQueryRepository],
-  exports: [NutritionGoalsService, NutritionGoalsRepository, NutritionGoalsQueryRepository, MongooseModule],
+  exports: [
+    NutritionGoalsService,
+    NutritionGoalsRepository,
+    NutritionGoalsQueryRepository,
+    MongooseModule,
+  ],
 })
 export class NutritionGoalsModule {}

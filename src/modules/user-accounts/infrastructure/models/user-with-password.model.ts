@@ -13,6 +13,7 @@ export class UserWithPasswordModel {
   dailyKcalGoal?: number;
   authProvider?: 'local' | 'google';
   googleId?: string;
+  role: string;
   createdAt: Date;
 }
 
@@ -26,6 +27,7 @@ export const UserWithPasswordModelMapper = (user: UserDocument): UserWithPasswor
     dailyKcalGoal: user.dailyKcalGoal,
     authProvider: user.authProvider,
     googleId: user.googleId,
+    role: user.role,
     createdAt: user.createdAt,
   };
 };

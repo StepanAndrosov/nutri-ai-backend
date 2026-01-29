@@ -79,6 +79,16 @@ class EnvironmentVariables {
   @IsOptional()
   @Min(0)
   OPENAI_DAILY_TOKEN_LIMIT: number = 50000;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  OPENAI_FREE_TIER_DAILY_TOKEN_LIMIT: number = 10000;
+
+  @IsNumber()
+  @IsOptional()
+  @Min(0)
+  OPENAI_SUBSCRIBER_DAILY_TOKEN_LIMIT: number = 200000;
 }
 
 export function validate(config: Record<string, unknown>) {

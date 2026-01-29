@@ -13,6 +13,7 @@ import { UserOutputModel } from '../../user-accounts/api/models/output/user.outp
 import { DomainException } from '../../../core/exceptions/domain-exceptions';
 import { DomainExceptionCode } from '../../../core/exceptions/domain-exception-codes';
 import { CurrentUserType } from './types/request-with-user.type';
+import { UserRole } from '../domain/user-role.enum';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -51,7 +52,11 @@ export class AuthController {
     const user = await this.usersQueryRepository.getByIdOrNotFoundFail(createdUserId);
 
     // Generate JWT access token
-    const token = await this.authService.generateAccessToken(user.id, user.email);
+    const token = await this.authService.generateAccessToken(
+      user.id,
+      user.email,
+      user.role ?? UserRole.USER,
+    );
 
     return {
       token,
@@ -90,7 +95,11 @@ export class AuthController {
     const user = await this.usersQueryRepository.getByIdOrNotFoundFail(userWithPassword.id);
 
     // Generate JWT access token
-    const token = await this.authService.generateAccessToken(user.id, user.email);
+    const token = await this.authService.generateAccessToken(
+      user.id,
+      user.email,
+      user.role ?? UserRole.USER,
+    );
 
     return {
       token,
@@ -134,7 +143,11 @@ export class AuthController {
     }
 
     // Generate JWT access token
-    const token = await this.authService.generateAccessToken(user.id, user.email);
+    const token = await this.authService.generateAccessToken(
+      user.id,
+      user.email,
+      user.role ?? UserRole.USER,
+    );
 
     return {
       token,

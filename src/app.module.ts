@@ -13,6 +13,7 @@ import { MealsModule } from './modules/meals/meals.module';
 import { AiModule } from './modules/ai/ai.module';
 import { TokenUsageModule } from './modules/token-usage/token-usage.module';
 import { NutritionGoalsModule } from './modules/nutrition-goals/nutrition-goals.module';
+import { SubscriptionsModule } from './modules/subscriptions/subscriptions.module';
 import {
   appConfig,
   databaseConfig,
@@ -48,6 +49,7 @@ import {
     AiModule,
     TokenUsageModule,
     NutritionGoalsModule,
+    SubscriptionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

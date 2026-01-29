@@ -12,6 +12,18 @@ export class UsersRepository {
     return insertResult[0].id as string;
   }
 
+  async updateRole(userId: string, role: string): Promise<boolean> {
+    const result = await this.UserModel.updateOne(
+      { _id: userId },
+      {
+        $set: {
+          role,
+        },
+      },
+    );
+    return result.modifiedCount > 0;
+  }
+
   async delete(id: string): Promise<boolean> {
     const deletingResult = await this.UserModel.deleteOne({ _id: id });
 

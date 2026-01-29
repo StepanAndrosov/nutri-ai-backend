@@ -70,7 +70,7 @@ export class NutritionGoalsOutputModel {
 }
 
 function calculateGrams(dailyKcalGoal: number, percentage: number, kcalPerGram: number): number {
-  return Math.round(((dailyKcalGoal * percentage) / 100) / kcalPerGram);
+  return Math.round((dailyKcalGoal * percentage) / 100 / kcalPerGram);
 }
 
 export const NutritionGoalsOutputModelMapper = (
